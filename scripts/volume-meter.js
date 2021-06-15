@@ -49,7 +49,7 @@ function meterLoop(startTime, volumeText, audioContext, mediaStreamSource, meter
       volumeText.innerHTML = meter.volume;
       curTime = new Date().getTime() - startTime
       x = width*curTime/duration
-      y = height*(1-meter.volume*5)
+      y = height*(1-meter.volume)
       meterCanvasContext.lineTo(x,y)
       meterCanvasContext.stroke()
       // set up the next visual callback

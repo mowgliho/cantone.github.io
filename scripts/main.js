@@ -22,6 +22,7 @@ window.onload = function() {
 
   // grab frequency field
   frequencyText = document.getElementById('frequency-text');
+  frequencyCanvas = document.getElementById('frequency');
 
   // monkeypatch Web Audio
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -69,5 +70,5 @@ function gotStream(stream) {
     // kick off the visual updating
     meterLoop(startTime, volumeText, audioContext, mediaStreamSource, meterCanvas, meterCanvasContext, DURATION);
     spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, audioContext, mediaStreamSource, startTime, DURATION);
-    frequencyLoop(frequencyText, audioContext, mediaStreamSource, startTime, DURATION);
+    frequencyLoop(frequencyText, frequencyCanvas, audioContext, mediaStreamSource, startTime, DURATION);
 }
