@@ -1,16 +1,18 @@
-function createAnalyzer(audioContext) {
+function initializeSpectrogram(audioContext, mediaStreamSource) {
   var analyzer = audioContext.createAnalyser();
   analyzer.minDecibels = -90;
   analyzer.maxDecibels = -10;
   analyzer.smoothingTimeConstant = 0.85;
+  analyzer.fftSize = 256;
+  mediaStreamSource.connect(analyzer);
   return analyzer;
 }
 
-function spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, analyzer, startTime, duration) {
+function spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, audioContext, mediaStreamSource, startTime, duration) {
+  analyzer = initializeSpectrogram(audioContext, mediaStreamSource);
   let width = spectrogramCanvas.width;
   let height = spectrogramCanvas.height;
 
-  analyzer.fftSize = 256;
   let bufferLengthAlt = analyzer.frequencyBinCount;
   let dataArrayAlt = new Uint8Array(bufferLengthAlt);
 

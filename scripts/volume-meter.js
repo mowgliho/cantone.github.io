@@ -1,4 +1,4 @@
-function createAudioMeter(audioContext) {
+function initializeAudioMeter(audioContext, mediaStreamSource) {
 	var processor = audioContext.createScriptProcessor(512);
 	processor.onaudioprocess = volumeAudioProcess;
 	processor.volume = 0;
@@ -14,6 +14,7 @@ function createAudioMeter(audioContext) {
 			this.onaudioprocess = null;
 		};
 
+  mediaStreamSource.connect(processor)
 	return processor;
 }
 
@@ -32,7 +33,8 @@ function volumeAudioProcess( event ) {
   this.volume = Math.max(rms, this.volume*this.averaging);
 }
 
-function meterLoop(startTime, volumeText, meter, meterCanvas, meterCanvasContext, duration) {
+function meterLoop(startTime, volumeText, audioContext, mediaStreamSource, meterCanvas, meterCanvasContext, duration) {
+    meter = initializeAudioMeter(audioContext, mediaStreamSource);
     // clear the background
     let width = meterCanvas.width
     let height = meterCanvas.height
