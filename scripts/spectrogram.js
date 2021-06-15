@@ -17,10 +17,7 @@ function spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, audioConte
   let dataArrayAlt = new Uint8Array(bufferLengthAlt);
 
 
-  let drawAlt = function() {
-    if(new Date().getTime() - startTime < duration) {
-      drawVisual = window.requestAnimationFrame(drawAlt);
-    }
+  let drawInner = function() {
     analyzer.getByteFrequencyData(dataArrayAlt);
 
     spectrogramCanvasContext.fillStyle = 'rgb(0, 255, 0)';
@@ -40,6 +37,9 @@ function spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, audioConte
       }
       x += barWidth + 1;
     }
+    if(new Date().getTime() - startTime < duration) {
+      window.requestAnimationFrame(drawInner);
+    }
   };
-  drawAlt();
+  drawInner();
 }

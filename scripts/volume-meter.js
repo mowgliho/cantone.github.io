@@ -44,7 +44,7 @@ function meterLoop(startTime, volumeText, audioContext, mediaStreamSource, meter
     meterCanvasContext.beginPath()
     meterCanvasContext.moveTo(0,height)
 
-    var drawInner = function() {
+    let drawInner = function() {
       // display volume as text
       volumeText.innerHTML = meter.volume;
       curTime = new Date().getTime() - startTime

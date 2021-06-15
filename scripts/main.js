@@ -69,5 +69,5 @@ function gotStream(stream) {
     // kick off the visual updating
     meterLoop(startTime, volumeText, audioContext, mediaStreamSource, meterCanvas, meterCanvasContext, DURATION);
     spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, audioContext, mediaStreamSource, startTime, DURATION);
-//    frequencyLoop(frequencyText, audioContext.sampleRate, analyzer, startTime, DURATION);
+    frequencyLoop(frequencyText, audioContext, mediaStreamSource, startTime, DURATION);
 }
