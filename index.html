@@ -18,8 +18,16 @@
     <script src="scripts/main.js"></script>
   </head>
   <body>
+    <!-- calibration stuff -->
     Calibration:</br>
     Current Calibrated Value: <p id='calibrated-value'></p>
+    <button id="calibrate">Calibrate!</button></br>
+    <div id="calibration-window" style="visibility: hidden;">
+      Text: <p id="next-calibration-sentence"></p>
+      <button id="start-calibration">Start</button><button id="stop-calibration">Stop</button>
+    </div>
+    <hr>
+    <!-- other stuff -->
     <button id="start">Start</button></br>
     Volume:</br>
     <canvas id="meter" width="500" height="200"></canvas>

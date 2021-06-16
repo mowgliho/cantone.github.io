@@ -12,7 +12,11 @@ let startTime = null;
 
 window.onload = function() {
   //calibration initialization
-  initializeCalibration(document.getElementById('calibrated-value'))
+  initializeCalibration(
+    document.getElementById('calibrated-value'), 
+    document.getElementById('calibration-window'), 
+    document.getElementById('next-calibration-sentence'));
+  document.getElementById('calibrate').onclick = loadCalibrationWindow;
 
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
@@ -30,7 +34,7 @@ window.onload = function() {
   // monkeypatch Web Audio
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
   // grab an audio context
-  start = document.getElementById('start')
+  start = document.getElementById('start');
   start.onclick = startAudio;
 
 }

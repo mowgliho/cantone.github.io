@@ -2,6 +2,8 @@ var DELIMITER = ';'
 var storedSemitone;
 var spokenSentences;
 var calibratedField;
+var calibrationWindow;
+var calibratonSentence;
 
 var harvardSentences = {
   h0:'Stop whistling and watch the boys march.',
@@ -16,13 +18,17 @@ var harvardSentences = {
   h9:'Choose between the high road and the low.'
 };
 
-function initializeCalibration(field) {
+function initializeCalibration(field, calibWindow, calibSentence) {
   calibratedField = field;
+  calibrationWindow = calibWindow;
+  calibrationSentence = calibSentence;
 
   storedSemitone = localStorage.getItem('stored_semitone');
   spokenSentences = readSpokenSentences();
   
-  updateCalibration(storedSemitone)
+  updateCalibration(storedSemitone, spokenSentences)
+  
+  console.log(getNextSentence(spokenSentences))
 }
 
 function readSpokenSentences() {
@@ -30,19 +36,33 @@ function readSpokenSentences() {
   var spokenSentences = [];
   if(stored == null) {
   } else {
-    for(var sent in stored.split(DELIMITER)) {
+    for(const sent of stored.split(DELIMITER)) {
       if(sent in harvardSentences.keys()) spokenSentences.push(sent);
     }
   }
  return spokenSentences;
 }
 
+function getNextSentence(spokenSentences) {
+  for(const [key,value] of Object.entries(harvardSentences).sort((a,b) => a[0].localeCompare(b[0]))) {
+    if(!(key in spokenSentences)) {
+      return [key,value]
+    }
+  }
+}
+
 function writeSpokenSentences(sentences) {
   console.log(sentences.join(DELIMITER))//TODO change to write to storage
 }
 
-function updateCalibration(value) {
-  calibratedField.innerHTML = value == null? 'null': value;
+function updateCalibration(value, spokenSentences) {
+  calibratedField.innerHTML = (value == null? 'null': value) + ' on ' + spokenSentences.length + ' sentences.';
 }
 
+function loadCalibrationWindow() {
+  sentence = getNextSentence(spokenSentences)
+  calibrationWindow.style.visibility = 'visible'
+  calibrationSentence.innerHTML = sentence[1]
+}
+// on parsing calibration data, make invisible and update stuff?
 // do means in st space
