@@ -11,6 +11,9 @@ let start = null
 let startTime = null;
 
 window.onload = function() {
+  //calibration initialization
+  initializeCalibration(document.getElementById('calibrated-value'))
+
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
   meterCanvasContext = meterCanvas.getContext("2d");
@@ -29,6 +32,7 @@ window.onload = function() {
   // grab an audio context
   start = document.getElementById('start')
   start.onclick = startAudio;
+
 }
 
 function startAudio() {
