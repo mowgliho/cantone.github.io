@@ -9,6 +9,7 @@ let frequencyText = null;
 let analyzer = null;
 let start = null
 let startTime = null;
+let stream = null;
 
 window.onload = function() {
   //calibration initialization
@@ -18,6 +19,8 @@ window.onload = function() {
     document.getElementById('next-calibration-sentence'));
   document.getElementById('calibrate').onclick = loadCalibrationWindow;
   document.getElementById('refresh-calibration').onclick = refreshCalibration;
+  document.getElementById('start-calibration').onclick = startAudio(function(stream) { startCalibration(audioContext,stream);});
+  document.getElementById('stop-calibration').onclick = stopCalibration;
 
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
@@ -35,31 +38,36 @@ window.onload = function() {
   // monkeypatch Web Audio
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
   // grab an audio context
-  start = document.getElementById('start');
-  start.onclick = startAudio;
+  document.getElementById('start-graphs').onclick = startAudio(createGraphs);
 
 }
 
-function startAudio() {
-  // Attempt to get audio input
-  try {
-      // monkeypatch getUserMedia
-      // ask for an audio input
-      audioContext = new AudioContext();
-      let constraints = {
-          "audio": {
-              "mandatory": {
-                  "googEchoCancellation": "false",
-                  "googAutoGainControl": "false",
-                  "googNoiseSuppression": "false",
-                  "googHighpassFilter": "false"
-              },
-              "optional": []
-          },
-      };
-      navigator.mediaDevices.getUserMedia(constraints).then(gotStream).catch(didntGetStream);
-  } catch (e) {
-      alert('getUserMedia threw exception :' + e);
+function startAudio(f) {
+  return function() {
+    if(stream == null) {
+      try {
+          // monkeypatch getUserMedia
+          // ask for an audio input
+          audioContext = new AudioContext();
+          let constraints = {
+            audio: {
+              autoGainControl: false,
+              channelCount: 2,
+              echoCancellation: false,
+              latency: 0,
+              noiseSuppression: false,
+              sampleRate: 48000,
+              sampleSize: 16,
+              volume: 1.0
+            }
+          };
+          navigator.mediaDevices.getUserMedia(constraints).then(function(s) { stream = s; f(stream);}).catch(didntGetStream);
+      } catch (e) {
+          alert('getUserMedia threw exception :' + e);
+      }
+    } else {
+      f(stream);
+    }
   }
 }
 
@@ -70,7 +78,7 @@ function didntGetStream() {
 
 var mediaStreamSource = null;
 
-function gotStream(stream) {
+function createGraphs(stream) {
     // Create an AudioNode from the stream.
     mediaStreamSource = audioContext.createMediaStreamSource(stream);
  
