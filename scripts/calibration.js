@@ -1,5 +1,5 @@
-var MINF0 = 75;
-var MAXF0 = 500;
+var MINF0 = 49 + 12*Math.log2(75/440);//Boermsa 1993
+var MAXF0 = 49 + 12*Math.log2(500/440);
 var MAXCALIBRATIONTIME = 5000;
 var MEASUREMENTINTERVAL = 10;
 var DELIMITER = ';'
@@ -11,6 +11,7 @@ var calibrating = false;
 var calibrationTimeout = null;
 var calibrationTask = null;
 var freqData = null;
+var visibleSentence = null;
 
 var harvardSentences = {
   h0:'Stop whistling and watch the boys march.',
@@ -34,12 +35,12 @@ function initializeCalibration(field, calibWindow, calibSentence) {
 }
 
 function readSpokenSentences() {
-  var stored = localStorage.getItem('spoken_sentences');
+  var stored = localStorage.getItem('sent');
   var spokenSentences = [];
   if(stored == null) {
   } else {
     for(const sent of stored.split(DELIMITER)) {
-      if(sent in harvardSentences.keys()) spokenSentences.push(sent);
+      if(sent in harvardSentences) spokenSentences.push(sent);
     }
   }
  return spokenSentences;
@@ -48,40 +49,46 @@ function readSpokenSentences() {
 function getNextSentence() {
   let spokenSentences = readCache()['sent']
   for(const [key,value] of Object.entries(harvardSentences).sort((a,b) => a[0].localeCompare(b[0]))) {
-    if(!(key in spokenSentences)) {
+    if(!(spokenSentences.includes(key))) {
       return [key,value];
     }
   }
-}
-
-function writeSpokenSentences(sentences) {
-  console.log(sentences.join(DELIMITER));//TODO change to write to storage
+  return null;
 }
 
 function readCache() {
   return {
-    mean: localStorage.getItem('semitone_mean'),
-    sd: localStorage.getItem('semitone_sd'),
-    n: localStorage.getItem('semitone_n'),
+    mean: parseFloat(localStorage.getItem('mean')),
+    sd: parseFloat(localStorage.getItem('sd')),
+    n: parseInt(localStorage.getItem('n')),
     sent: readSpokenSentences()
   }
 }
 
 function writeCache(data) {
-  for(const [key,value] of Object.entries(data)) {
+  for(var [key,value] of Object.entries(data)) {
+    if(key == 'sent') {
+      value = value.join(DELIMITER)
+    }
     localStorage.setItem(key, value)
   }
 }
 
 function updateCalibration() {
   let cache = readCache()
-  calibratedField.innerHTML = (cache['mean'] == null? 'null': cache['mean']) + ' on ' + cache['sent'].length + ' sentences.';
+  calibratedField.innerHTML = (isNaN(cache['mean'])? 'NaN': cache['mean']) + ' on ' + cache['sent'].length + ' sentences.';
+  sentence = getNextSentence();
+  if(sentence == null) {
+    calibrationWindow.style.visibility = 'hidden';
+  } else {
+    visibleSentence = sentence[0]
+    calibrationSentence.innerHTML = sentence[1];
+  }
 }
 
 function loadCalibrationWindow() {
-  sentence = getNextSentence();
   calibrationWindow.style.visibility = 'visible';
-  calibrationSentence.innerHTML = sentence[1];
+  updateCalibration();
 }
 
 function refreshCalibration() {
@@ -93,7 +100,6 @@ function refreshCalibration() {
 
 function startCalibration(audioContext, stream) {
   if(calibrating) return;
-  console.log('started')
   calibrating = true;
 
   var analyzer = audioContext.createAnalyser();
@@ -106,7 +112,7 @@ function startCalibration(audioContext, stream) {
   freqData = new Array(Math.ceil(MAXCALIBRATIONTIME/MEASUREMENTINTERVAL));
   calcF0 = function() {
     analyzer.getFloatTimeDomainData(data);
-    freqData[idx] = yin(data, sampleRate);
+    freqData[idx] = 49 + 12*Math.log2(yin(data, sampleRate)/440);
     idx ++;
   }
 
@@ -119,14 +125,31 @@ function stopCalibration() {
   calibrating = false;
   clearTimeout(calibrationTimeout);
   clearTimeout(calibrationTask);
-  console.log('ended');
 
   //analyze frequency data
-  console.log(freqData);
   const f0 = freqData.filter(val => val > MINF0 && val < MAXF0)
-  console.log(f0)
+  if(f0.length > 0) {
+    let data = readCache();
+    if(isNaN(data['n']) || data['n'] == 0) {
+      data = {
+        mean: 0,
+        sd: 0,
+        n: 0,
+        sent: []
+      }
+    }
+    let variance = (data['sd']*data['sd'])*data['n']
+    for(const val of f0) {
+      let n = data['n'];
+      let old_mean = data['mean'];
+      data['mean'] = data['mean']*(n/(n + 1)) + val/(n + 1)
+      //https://datagenetics.com/blog/november22017/index.html
+      variance = variance + (val - old_mean)*(val - data['mean'])
+      data['n'] = n + 1
+    }
+    data['sd'] = Math.sqrt(variance/data['n'])
+    data['sent'].push(visibleSentence)
+    writeCache(data);
+    updateCalibration();
+  }
 }
-
-// on parsing calibration data, make invisible and update stuff?
-// button to clear calibration
-// do means in st space
