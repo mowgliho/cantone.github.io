@@ -23,12 +23,7 @@ function initializeCalibration(field, calibWindow, calibSentence) {
   calibrationWindow = calibWindow;
   calibrationSentence = calibSentence;
 
-  storedSemitone = localStorage.getItem('stored_semitone');
-  spokenSentences = readSpokenSentences();
-  
-  updateCalibration(storedSemitone, spokenSentences)
-  
-  console.log(getNextSentence(spokenSentences))
+  updateCalibration();
 }
 
 function readSpokenSentences() {
@@ -46,23 +41,32 @@ function readSpokenSentences() {
 function getNextSentence(spokenSentences) {
   for(const [key,value] of Object.entries(harvardSentences).sort((a,b) => a[0].localeCompare(b[0]))) {
     if(!(key in spokenSentences)) {
-      return [key,value]
+      return [key,value];
     }
   }
 }
 
 function writeSpokenSentences(sentences) {
-  console.log(sentences.join(DELIMITER))//TODO change to write to storage
+  console.log(sentences.join(DELIMITER));//TODO change to write to storage
 }
 
-function updateCalibration(value, spokenSentences) {
-  calibratedField.innerHTML = (value == null? 'null': value) + ' on ' + spokenSentences.length + ' sentences.';
+function updateCalibration() {
+  storedSemitone = localStorage.getItem('stored_semitone');
+  spokenSentences = readSpokenSentences();
+  calibratedField.innerHTML = (storedSemitone == null? 'null': storedSemitone) + ' on ' + spokenSentences.length + ' sentences.';
 }
 
 function loadCalibrationWindow() {
-  sentence = getNextSentence(spokenSentences)
-  calibrationWindow.style.visibility = 'visible'
-  calibrationSentence.innerHTML = sentence[1]
+  sentence = getNextSentence(spokenSentences);
+  calibrationWindow.style.visibility = 'visible';
+  calibrationSentence.innerHTML = sentence[1];
+}
+
+function refreshCalibration() {
+  localStorage.removeItem('spoken_sentences');
+  localStorage.removeItem('stored_semitone');
+  updateCalibration();
 }
 // on parsing calibration data, make invisible and update stuff?
+// button to clear calibration
 // do means in st space

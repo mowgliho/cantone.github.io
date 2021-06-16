@@ -17,6 +17,7 @@ window.onload = function() {
     document.getElementById('calibration-window'), 
     document.getElementById('next-calibration-sentence'));
   document.getElementById('calibrate').onclick = loadCalibrationWindow;
+  document.getElementById('refresh-calibration').onclick = refreshCalibration;
 
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
