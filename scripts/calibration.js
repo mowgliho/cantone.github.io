@@ -26,12 +26,12 @@ class Calibrator {
 
   //calibration variables
   calibrating = false;
-  calibrationTimeout = null;
-  calibrationTask = null;
+  timeout = null;
+  task = null;
   freqData = null;
   visibleSentence = null;
 
-  
+  //constructor
   constructor(document, startAudio) {
     self = this;
     self.field = document.getElementById('calibrated-value');
@@ -39,11 +39,36 @@ class Calibrator {
     self.sentence = document.getElementById('next-calibration-sentence');
 
     document.getElementById('calibrate').onclick = self.loadCalibrationWindow;
-    document.getElementById('refresh-calibration').onclick = self.refreshCalibration;
-    document.getElementById('stop-calibration').onclick = self.stopCalibration;
-    document.getElementById('start-calibration').onclick = startAudio(function(audioContext, stream) { self.startCalibration(audioContext,stream);});
+    document.getElementById('refresh-calibration').onclick = self.refresh;
+    document.getElementById('stop-calibration').onclick = self.stop;
+    document.getElementById('start-calibration').onclick = startAudio(function(audioContext, stream) { self.start(audioContext,stream);});
  
-    self.updateCalibration();
+    self.update();
+  }
+
+  //cache stuff
+  readCache() {
+    return {
+      mean: parseFloat(localStorage.getItem('mean')),
+      sd: parseFloat(localStorage.getItem('sd')),
+      n: parseInt(localStorage.getItem('n')),
+      sent: self.readSpokenSentences()
+    }
+  }
+
+  writeCache(data) {
+    for(var [key,value] of Object.entries(data)) {
+      if(key == 'sent') {
+        value = value.join(self.DELIMITER)
+      }
+      localStorage.setItem(key, value)
+    }
+  }
+
+  clearCache() {
+    for(const [key,value] of Object.entries(self.readCache())) {
+      localStorage.removeItem(key);
+    }
   }
 
   readSpokenSentences() {
@@ -68,25 +93,9 @@ class Calibrator {
     return null;
   }
 
-  readCache() {
-    return {
-      mean: parseFloat(localStorage.getItem('mean')),
-      sd: parseFloat(localStorage.getItem('sd')),
-      n: parseInt(localStorage.getItem('n')),
-      sent: self.readSpokenSentences()
-    }
-  }
 
-  writeCache(data) {
-    for(var [key,value] of Object.entries(data)) {
-      if(key == 'sent') {
-        value = value.join(self.DELIMITER)
-      }
-      localStorage.setItem(key, value)
-    }
-  }
-
-  updateCalibration() {
+  //GUI stuff
+  update() {
     let cache = self.readCache()
     self.field.innerHTML = (isNaN(cache['mean'])? 'NaN': cache['mean']) + ' on ' + cache['sent'].length + ' sentences.';
     let sentence = self.getNextSentence();
@@ -100,23 +109,21 @@ class Calibrator {
 
   loadCalibrationWindow() {
     self.window.style.visibility = 'visible';
-    self.updateCalibration();
+    self.update();
   }
 
-  refreshCalibration() {
-    for(const [key,value] of Object.entries(self.readCache())) {
-      localStorage.removeItem(key);
-    }
-    self.updateCalibration();
+  refresh() {
+    self.clearCache();
+    self.update();
   }
 
-  startCalibration(audioContext, stream) {
+  //Calibration code
+  start(audioContext, stream) {
     if(self.calibrating) return;
     self.calibrating = true;
 
-    console.log(audioContext)
     let analyzer = audioContext.createAnalyser();
-    analyzer.fftsize = Math.pow(2,13);
+    analyzer.fftsize = Math.pow(2,9);
     audioContext.createMediaStreamSource(stream).connect(analyzer)
     let sampleRate = audioContext.sampleRate;
     let data = new Float32Array(analyzer.fftSize)
@@ -129,15 +136,15 @@ class Calibrator {
       idx ++;
     }
 
-    self.calibrationTask = setInterval(calcF0, self.MEASUREMENTINTERVAL)
-    self.calibrationTimeout = setTimeout(self.stopCalibration, self.MAXCALIBRATIONTIME)
+    self.task = setInterval(calcF0, self.MEASUREMENTINTERVAL)
+    self.timeout = setTimeout(self.stop, self.MAXCALIBRATIONTIME)
   }
 
-  stopCalibration() {
+  stop() {
     if(!self.calibrating) return;
     self.calibrating = false;
-    clearTimeout(self.calibrationTimeout);
-    clearTimeout(self.calibrationTask);
+    clearTimeout(self.timeout);
+    clearTimeout(self.task);
 
     //analyze frequency data
     const f0 = self.freqData.filter(val => val > self.MINF0 && val < self.MAXF0)
@@ -163,7 +170,7 @@ class Calibrator {
       data['sd'] = Math.sqrt(variance/data['n'])
       data['sent'].push(self.visibleSentence)
       self.writeCache(data);
-      self.updateCalibration();
+      self.update();
     }
   }
 }
