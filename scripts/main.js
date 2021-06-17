@@ -12,6 +12,8 @@ let startTime = null;
 let stream = null;
 
 window.onload = function() {
+  initializeModeSwitcher(document);
+
   //calibration initialization
   calibrator = new Calibrator(document, startAudio);
 

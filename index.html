@@ -8,6 +8,7 @@
     <title>Cantone</title>
     <style>
     </style>
+    <script src="scripts/mode.js"></script>
     <!-- Include components -->
     <script src="scripts/volume-meter.js"></script>
     <script src="scripts/spectrogram.js"></script>
@@ -18,26 +19,52 @@
     <script src="scripts/main.js"></script>
   </head>
   <body>
-    <!-- calibration stuff -->
-    Calibration:</br>
-    Current Calibrated Value: <p id='calibrated-value'></p>
-    <button id="calibrate">Calibrate!</button><button id='refresh-calibration'>Refresh Calibration</button></br>
-    <div id="calibration-window" style="visibility: hidden;">
-      Text: <p id="next-calibration-sentence"></p>
-      <button id="start-calibration">Start</button><button id="stop-calibration">Stop</button>
-    </div>
+    <!-- menu -->
+    <button id="mode-calib">Calibrate</button>
+    <button id="mode-graph">Graph</button>
+    <button id="mode-produce">Production</button>
+    <button id="mode-listen">Listening</button>
     <hr>
-    <!-- other stuff -->
-    <button id="start-graphs">Start</button></br>
-    Volume:</br>
-    <canvas id="meter" width="500" height="200"></canvas>
 
-    <p id="volume-text"></p>
+    <!-- calibration stuff -->
+    <div id="div-calib" style="display: none;">
+      Calibration:</br>
+      Current Calibrated Value: <p id="calibrated-value"></p>
+      <button id="calibrate">Calibrate!</button><button id="refresh-calibration">Refresh Calibration</button></br>
+      <div id="calibration-window" style="visibility: hidden;">
+        Text: <p id="next-calibration-sentence"></p>
+        <button id="start-calibration">Start</button><button id="stop-calibration">Stop</button>
+      </div>
+    </div>
 
-    Spectrogram:</br>
-    <canvas id="spectrogram" width="500" height="200"></canvas>
 
-    <p id ="frequency-text"></p>
-    <canvas id="frequency" width="500" height="200"></canvas>
+
+    <!-- graphs -->
+    <div id="div-graph" style="display: none;">
+      <button id="start-graphs">Start</button></br>
+      Volume:</br>
+      <canvas id="meter" width="500" height="200"></canvas>
+
+      <p id="volume-text"></p>
+
+      Spectrogram:</br>
+      <canvas id="spectrogram" width="500" height="200"></canvas>
+
+      <p id ="frequency-text"></p>
+      <canvas id="frequency" width="500" height="200"></canvas>
+    </div>
+
+
+    <!-- production -->
+    <div id="div-produce" style="display: none;">
+      TODO: production
+    </div>
+
+
+    <!-- listening -->
+    <div id="div-listen" style="display: none;">
+      TODO: listening
+    </div>
+ 
   </body>
 </html>
