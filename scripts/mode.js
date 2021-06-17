@@ -13,7 +13,6 @@ function initializeModeSwitcher(document) {
   }
 
   for(const mode of modes) {
-      console.log(mode)
       data[mode] = document.getElementById("div-" + mode);
       document.getElementById("mode-" + mode).onclick = function() { activateMode(mode)}
   }

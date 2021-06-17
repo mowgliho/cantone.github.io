@@ -19,31 +19,54 @@ class Calibrator {
   };
 
   //to be set by constructor
-  self
-  field;
-  window;
-  sentence;
+  self;
+  summary;
+  sentenceData;
 
   //calibration variables
   calibrating = false;
   timeout = null;
   task = null;
   freqData = null;
-  visibleSentence = null;
 
   //constructor
   constructor(document, startAudio) {
     self = this;
-    self.field = document.getElementById('calibrated-value');
-    self.window = document.getElementById('calibration-window');
-    self.sentence = document.getElementById('next-calibration-sentence');
 
-    document.getElementById('calibrate').onclick = self.loadCalibrationWindow;
+    self.summary = document.getElementById('calib-summary-text');
+    self.initializeSentences(document, startAudio);
     document.getElementById('refresh-calibration').onclick = self.refresh;
-    document.getElementById('stop-calibration').onclick = self.stop;
-    document.getElementById('start-calibration').onclick = startAudio(function(audioContext, stream) { self.start(audioContext,stream);});
  
     self.update();
+  }
+
+  initializeSentences(document, startAudio) {
+    let html = document.getElementById('div-calib-sentences');
+    self.sentenceData = {};
+    for(const [key,value] of Object.entries(self.HARVARDSENTENCES).sort((a,b) => a[0].localeCompare(b[0]))) {
+      let div = document.createElement('div');
+      //create button 
+      let recordButton = document.createElement('button');
+      recordButton.innerHTML = 'Record';
+      let stopButton = document.createElement('button');
+      stopButton.innerHTML = 'Stop';
+      div.appendChild(recordButton);
+      div.appendChild(stopButton);
+      //onclicks
+      recordButton.onclick = startAudio(function(audioContext, stream) { 
+        recordButton.style = 'visibility:hidden;';
+        stopButton.style = 'visibility:visible;color:red;';
+        self.start(audioContext, stream, key);
+      });
+      stopButton.onclick = function() { self.stop(key);};
+      //create text
+      let p = document.createElement('div');
+      p.style = 'display:inline-block;';
+      p.innerHTML = '&nbsp' + value
+      div.appendChild(p);
+      html.appendChild(div);
+      self.sentenceData[key] = {div:div, recordButton:recordButton, stopButton: stopButton};
+    }
   }
 
   //cache stuff
@@ -83,33 +106,25 @@ class Calibrator {
    return spokenSentences;
   }
 
-  getNextSentence() {
-    let spokenSentences = self.readCache()['sent']
-    for(const [key,value] of Object.entries(self.HARVARDSENTENCES).sort((a,b) => a[0].localeCompare(b[0]))) {
-      if(!(spokenSentences.includes(key))) {
-        return [key,value];
-      }
-    }
-    return null;
-  }
-
-
   //GUI stuff
   update() {
     let cache = self.readCache()
-    self.field.innerHTML = (isNaN(cache['mean'])? 'NaN': cache['mean']) + ' on ' + cache['sent'].length + ' sentences.';
-    let sentence = self.getNextSentence();
-    if(sentence == null) {
-      self.window.style.visibility = 'hidden';
+    if(cache['sent'].length == 0) {
+      self.summary.innerHTML = 'You haven\'t recorded any calibration sentences yet.';
     } else {
-      self.visibleSentence = sentence[0]
-      self.sentence.innerHTML = sentence[1];
+      self.summary.innerHTML = 'You\'ve recorded ' + cache['sent'].length + ' sentences, with a mean of ' + cache['mean'].toFixed(2) + ' and standard deviation of ' + cache['sd'].toFixed(2) + ' semitones.';
     }
-  }
-
-  loadCalibrationWindow() {
-    self.window.style.visibility = 'visible';
-    self.update();
+    for(const [key,value] of Object.entries(self.HARVARDSENTENCES).sort((a,b) => a[0].localeCompare(b[0]))) {
+      if(cache['sent'].includes(key)) {
+        self.sentenceData[key]['div'].style = 'color:blue;'
+        self.sentenceData[key]['recordButton'].style = 'visibility:hidden;';
+        self.sentenceData[key]['stopButton'].style = 'visibility:hidden;color:red;';
+      } else {
+        self.sentenceData[key]['div'].style = '';
+        self.sentenceData[key]['recordButton'].style = 'visibility:visible;';
+        self.sentenceData[key]['stopButton'].style = 'visibility:hidden;color:red;';
+      }
+    }
   }
 
   refresh() {
@@ -118,7 +133,7 @@ class Calibrator {
   }
 
   //Calibration code
-  start(audioContext, stream) {
+  start(audioContext, stream, sentence) {
     if(self.calibrating) return;
     self.calibrating = true;
 
@@ -137,10 +152,10 @@ class Calibrator {
     }
 
     self.task = setInterval(calcF0, self.MEASUREMENTINTERVAL)
-    self.timeout = setTimeout(self.stop, self.MAXCALIBRATIONTIME)
+    self.timeout = setTimeout(function() {self.stop(sentence);}, self.MAXCALIBRATIONTIME)
   }
 
-  stop() {
+  stop(sentence) {
     if(!self.calibrating) return;
     self.calibrating = false;
     clearTimeout(self.timeout);
@@ -168,9 +183,9 @@ class Calibrator {
         data['n'] = n + 1
       }
       data['sd'] = Math.sqrt(variance/data['n'])
-      data['sent'].push(self.visibleSentence)
+      data['sent'].push(sentence)
       self.writeCache(data);
-      self.update();
     }
+    self.update();
   }
 }
