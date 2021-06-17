@@ -13,14 +13,7 @@ let stream = null;
 
 window.onload = function() {
   //calibration initialization
-  initializeCalibration(
-    document.getElementById('calibrated-value'), 
-    document.getElementById('calibration-window'), 
-    document.getElementById('next-calibration-sentence'));
-  document.getElementById('calibrate').onclick = loadCalibrationWindow;
-  document.getElementById('refresh-calibration').onclick = refreshCalibration;
-  document.getElementById('start-calibration').onclick = startAudio(function(stream) { startCalibration(audioContext,stream);});
-  document.getElementById('stop-calibration').onclick = stopCalibration;
+  calibrator = new Calibrator(document, startAudio);
 
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
@@ -61,12 +54,12 @@ function startAudio(f) {
               volume: 1.0
             }
           };
-          navigator.mediaDevices.getUserMedia(constraints).then(function(s) { stream = s; f(stream);}).catch(didntGetStream);
+          navigator.mediaDevices.getUserMedia(constraints).then(function(s) { stream = s; f(audioContext, stream);}).catch(didntGetStream);
       } catch (e) {
           alert('getUserMedia threw exception :' + e);
       }
     } else {
-      f(stream);
+      f(audioContext, stream);
     }
   }
 }
@@ -78,7 +71,7 @@ function didntGetStream() {
 
 var mediaStreamSource = null;
 
-function createGraphs(stream) {
+function createGraphs(audioContext, stream) {
     // Create an AudioNode from the stream.
     mediaStreamSource = audioContext.createMediaStreamSource(stream);
  
