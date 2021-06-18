@@ -43,6 +43,7 @@ window.onload = function() {
   document.getElementById('start-graphs').onclick = startAudio(createGraphs);
 }
 
+//takes as input a function f and returns a function that asks audio and then feeds the obtained audio stuff into f
 function startAudio(f) {
   return function() {
     if(stream == null) {
