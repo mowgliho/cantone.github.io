@@ -1,19 +1,25 @@
-function initializeModeSwitcher(document) {
-  let modes = ['calib','graph','produce','listen']
-  let data = {}
+function initializeModeSwitcher(document, calibrator, producer) {
+  let modes = ['calib','graph','produce','listen'];
+  let data = {
+    calib: {cl: calibrator},
+    graph: {cl:null},
+    produce: {cl:producer},
+    listen: {cl:null}
+  };
 
   activateMode = function(m) {
     for(const [key,value] of Object.entries(data)) {
       if(key == m) {
-        value.style.display = 'block';
+        value['div'].style.display = 'block';
+        value['cl'].activate();
       } else {
-        value.style.display = 'none';
+        value['div'].style.display = 'none';
       }
     }
   }
 
   for(const mode of modes) {
-      data[mode] = document.getElementById("div-" + mode);
+      data[mode]['div'] = document.getElementById("div-" + mode);
       document.getElementById("mode-" + mode).onclick = function() { activateMode(mode)}
   }
 }

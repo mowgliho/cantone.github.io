@@ -8,14 +8,18 @@
     <title>Cantone</title>
     <style>
     </style>
+    <!-- libraries -->
+    <script src="scripts/yin.js"></script>
+    <!-- setup -->
     <script src="scripts/mode.js"></script>
     <script src="scripts/cache.js"></script>
+    <!-- components -->
+    <script src="scripts/calib.js"></script>
+    <script src="scripts/produce.js"></script>
     <!-- Include components -->
     <script src="scripts/volume-meter.js"></script>
     <script src="scripts/spectrogram.js"></script>
-    <script src="scripts/yin.js"></script>
     <script src="scripts/frequency.js"></script>
-    <script src="scripts/calibration.js"></script>
     <!-- Include the main app logic -->
     <script src="scripts/main.js"></script>
   </head>
@@ -59,14 +63,16 @@
     <!-- production -->
     <div id="div-produce" style="display: none;">
       <div id="div-produce-calib"></div>
-      <div id="div-produce-mode">
-        <button id="produce-mode-ideal">Idealized</button>
-        <button id="produce-mode-data">Data-Driven</button>
-        <button id="produce-mode-ta">Target Approximation</button>
+      <div id="div-produce-train">
+        <div id="div-produce-mode">
+          <button id="produce-mode-ideal">Idealized</button>
+          <button id="produce-mode-data">Data-Driven</button>
+          <button id="produce-mode-ta">Target Approximation</button>
+        </div>
+        <div id="div-produce-ideal" style="display:none;"></div>
+        <div id="div-produce-data" style="display:none;"></div>
+        <div id="div-produce-ta" style="display:none;"></div>
       </div>
-      <div id="div-produce-ideal" style="display:none;"></div>
-      <div id="div-produce-data" style="display:none;"></div>
-      <div id="div-produce-ta" style="display:none;"></div>
     </div>
 
 

@@ -26,6 +26,10 @@ class Calibrator {
     this.update();
   }
 
+  activate() {
+    this.update();
+  }
+
   initializeSentences = (that, document, startAudio) => {
     let html = document.getElementById('div-calib-sentences');
     this.sentenceData = {};

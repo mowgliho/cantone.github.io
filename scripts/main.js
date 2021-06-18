@@ -12,13 +12,17 @@ let startTime = null;
 let stream = null;
 
 window.onload = function() {
-  initializeModeSwitcher(document);
-
   //cache initialization
   let cache = new Cache();
 
   //calibration initialization
-  calibrator = new Calibrator(document, startAudio, cache);
+  let calibrator = new Calibrator(document, startAudio, cache);
+
+  //production initialization
+  let producer = new Producer(document, startAudio, cache);
+
+  //mode switcher
+  initializeModeSwitcher(document, calibrator, producer);
 
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
