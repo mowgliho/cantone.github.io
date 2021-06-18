@@ -69,7 +69,24 @@
           <button id="produce-mode-data">Data-Driven</button>
           <button id="produce-mode-ta">Target Approximation</button>
         </div>
-        <div id="div-produce-ideal" style="display:none;"></div>
+        <hr>
+        <div id="div-produce-ideal" style="display:none;">
+          Tone: <select id="produce-ideal-tone"></select>
+          <div id="div-produce-ideal-window">
+            <div style="width:100px;display:inline-block">
+              <canvas id="produce-ideal-start-col" height="500" width="100"></canvas>
+              <button style="width:100%;">Initial</button>
+            </div>
+            <div style="width:500px;display:inline-block">
+              <canvas id="produce-ideal-main-col" height="500" width="500"></canvas>
+              <button style="width:100%;">Try It!</button>
+            </div>
+            <div style="width:100px;display:inline-block">
+              <canvas id="produce-ideal-end-col" height="500" width="100"></canvas>
+              <button style="width:100%;">Final</button>
+            </div>
+          </div>
+        </div>
         <div id="div-produce-data" style="display:none;"></div>
         <div id="div-produce-ta" style="display:none;"></div>
       </div>

@@ -41,9 +41,6 @@ window.onload = function() {
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
   // grab an audio context
   document.getElementById('start-graphs').onclick = startAudio(createGraphs);
-
-  //TODO remove: debugging code
-//  document.getElementById('mode-produce').onclick()
 }
 
 function startAudio(f) {
