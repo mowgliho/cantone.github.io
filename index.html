@@ -9,6 +9,7 @@
     <style>
     </style>
     <script src="scripts/mode.js"></script>
+    <script src="scripts/cache.js"></script>
     <!-- Include components -->
     <script src="scripts/volume-meter.js"></script>
     <script src="scripts/spectrogram.js"></script>
@@ -57,7 +58,15 @@
 
     <!-- production -->
     <div id="div-produce" style="display: none;">
-      TODO: production
+      <div id="div-produce-calib"></div>
+      <div id="div-produce-mode">
+        <button id="produce-mode-ideal">Idealized</button>
+        <button id="produce-mode-data">Data-Driven</button>
+        <button id="produce-mode-ta">Target Approximation</button>
+      </div>
+      <div id="div-produce-ideal" style="display:none;"></div>
+      <div id="div-produce-data" style="display:none;"></div>
+      <div id="div-produce-ta" style="display:none;"></div>
     </div>
 
 

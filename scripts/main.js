@@ -14,8 +14,11 @@ let stream = null;
 window.onload = function() {
   initializeModeSwitcher(document);
 
+  //cache initialization
+  let cache = new Cache();
+
   //calibration initialization
-  calibrator = new Calibrator(document, startAudio);
+  calibrator = new Calibrator(document, startAudio, cache);
 
   // grab our meter canvas
   meterCanvas = document.getElementById('meter');
@@ -35,6 +38,8 @@ window.onload = function() {
   // grab an audio context
   document.getElementById('start-graphs').onclick = startAudio(createGraphs);
 
+  //TODO remove: debugging code
+//  document.getElementById('mode-produce').onclick()
 }
 
 function startAudio(f) {
