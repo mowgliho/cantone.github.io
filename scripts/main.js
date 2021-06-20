@@ -74,8 +74,9 @@ function startAudio(f) {
 }
 
 
-function didntGetStream() {
-    alert('Stream generation failed.');
+function didntGetStream(err) {
+    console.log('error' + err + err.stack);
+    alert('Stream generation failed.' + err.stack);
 }
 
 var mediaStreamSource = null;
