@@ -1,8 +1,7 @@
 function initializeModeSwitcher(document, calibrator, producer) {
-  let modes = ['calib','graph','produce','listen'];
+  let modes = ['calib','produce','listen'];
   let data = {
     calib: {cl: calibrator},
-    graph: {cl:null},
     produce: {cl:producer},
     listen: {cl:null}
   };
@@ -11,7 +10,7 @@ function initializeModeSwitcher(document, calibrator, producer) {
     for(const [key,value] of Object.entries(data)) {
       if(key == m) {
         value['div'].style.display = 'block';
-        value['cl'].activate();
+        if(value['cl'] != null) value['cl'].activate();
       } else {
         value['div'].style.display = 'none';
       }

@@ -16,17 +16,12 @@
     <!-- components -->
     <script src="scripts/calib.js"></script>
     <script src="scripts/produce.js"></script>
-    <!-- Include components -->
-    <script src="scripts/volume-meter.js"></script>
-    <script src="scripts/spectrogram.js"></script>
-    <script src="scripts/frequency.js"></script>
     <!-- Include the main app logic -->
     <script src="scripts/main.js"></script>
   </head>
   <body>
     <!-- menu -->
     <button id="mode-calib">Calibrate</button>
-    <button id="mode-graph">Graph</button>
     <button id="mode-produce">Production</button>
     <button id="mode-listen">Listening</button>
     <hr>
@@ -42,22 +37,6 @@
       <button id="refresh-calibration">Refresh Calibration</button></br>
     </div>
 
-
-
-    <!-- graphs -->
-    <div id="div-graph" style="display: none;">
-      <button id="start-graphs">Start</button></br>
-      Volume:</br>
-      <canvas id="meter" width="500" height="200"></canvas>
-
-      <p id="volume-text"></p>
-
-      Spectrogram:</br>
-      <canvas id="spectrogram" width="500" height="200"></canvas>
-
-      <p id ="frequency-text"></p>
-      <canvas id="frequency" width="500" height="200"></canvas>
-    </div>
 
 
     <!-- production -->

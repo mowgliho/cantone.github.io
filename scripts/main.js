@@ -1,14 +1,4 @@
 let audioContext = null;
-let DURATION = 5000;
-let meter = null;
-let meterCanvas = null;
-let meterCanvasContext = null;
-let spectrogramCanvas = null;
-let spectrogramCanvasContext = null;
-let frequencyText = null;
-let analyzer = null;
-let start = null
-let startTime = null;
 let stream = null;
 
 window.onload = function() {
@@ -24,23 +14,8 @@ window.onload = function() {
   //mode switcher
   initializeModeSwitcher(document, calibrator, producer);
 
-  // grab our meter canvas
-  meterCanvas = document.getElementById('meter');
-  meterCanvasContext = meterCanvas.getContext("2d");
-  volumeText = document.getElementById("volume-text");
-
-  // grab spectrogram canvas
-  spectrogramCanvas = document.getElementById("spectrogram");
-  spectrogramCanvasContext = spectrogramCanvas.getContext("2d");
-
-  // grab frequency field
-  frequencyText = document.getElementById('frequency-text');
-  frequencyCanvas = document.getElementById('frequency');
-
   // monkeypatch Web Audio
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
-  // grab an audio context
-  document.getElementById('start-graphs').onclick = startAudio(createGraphs);
 }
 
 //takes as input a function f and returns a function that asks audio and then feeds the obtained audio stuff into f
@@ -77,18 +52,4 @@ function startAudio(f) {
 function didntGetStream(err) {
     console.log('error' + err + err.stack);
     alert('Stream generation failed.' + err.stack);
-}
-
-var mediaStreamSource = null;
-
-function createGraphs(audioContext, stream) {
-    // Create an AudioNode from the stream.
-    mediaStreamSource = audioContext.createMediaStreamSource(stream);
- 
-    startTime = new Date().getTime();
-
-    // kick off the visual updating
-    meterLoop(startTime, volumeText, audioContext, mediaStreamSource, meterCanvas, meterCanvasContext, DURATION);
-    spectrogramLoop(spectrogramCanvas, spectrogramCanvasContext, audioContext, mediaStreamSource, startTime, DURATION);
-    frequencyLoop(frequencyText, frequencyCanvas, audioContext, mediaStreamSource, startTime, DURATION);
 }
