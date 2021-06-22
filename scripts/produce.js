@@ -1,6 +1,4 @@
 class Producer {
-  MEASUREMENTINTERVAL = 10;
-  idealTime = 5000;//TODO make larger, turn off if get close enough in range, changeable for main
   //modes
   modes = [null,'ideal','data','ta'];
   tones = ['t1','t2','t3','t4','t5','t6'];
@@ -100,24 +98,67 @@ class Producer {
 
   //functions and setup. All stuff with actual values will be with the update function
   initializeIdeal(that, document, startAudio) {
-    that.idealElements = {
-      start: document.getElementById("produce-ideal-start-col"),
-      main: document.getElementById("produce-ideal-main-col"),
-      end: document.getElementById("produce-ideal-end-col")
-    };
-    for(const x of ['start','end']) {
-      document.getElementById("produce-ideal-" + x + "-button").onclick = startAudio(function(audioContext,stream) {
-        that.startRecording(audioContext, stream, that.idealElements[x], that.idealContours[x], 'line');
-      });
+    that.idealAudioNodes = {}
+    for(const x of ['start','main','end']) {
+      const canvas = document.getElementById('produce-ideal-' + x + '-col');
+      const plotType = x == 'main'? 'trace':'line';
+      const button = document.getElementById("produce-ideal-" + x + "-button")
+      const contourFn = x == 'start'? function(c) { return([c[0],c[0]])}: 
+        x == 'main'? function(c) { return([c[0],c[1]])}:
+        function(c) {return([c[1],c[1]])};
+      that.idealAudioNodes[x] = new IdealAudioNode(contourFn, canvas, plotType, button, startAudio);
     }
-    document.getElementById("produce-ideal-main-button").onclick = startAudio(function(audioContext,stream) {
-      that.startRecording(audioContext, stream, that.idealElements['main'], that.idealContours['main'], 'trace');
-    });
+  }
 
+  updateIdeal(that) {
+    const tone = (that.tones.includes(that.tone) && that.calibrated)? that.tone: null;
+    for(const [key, node] of Object.entries(that.idealAudioNodes)) {
+      node.update(tone, that.mean, that.sd);
+    }
+  }
+}
+
+//called by initializeIdeal and put into a dict of [start, main, end] to thingie
+//parameter stuff is changed aboot using updateIdeal
+//actual audioNode is made via the audioContext that we obtain via startAudio
+//(when update, update the audioNode itself if it exists already. If not, update when we get the audioContext)
+class IdealAudioNode {
+  mean;
+  sd;
+
+  task;
+  timeout;
+  recording;
+
+  constructor(contourFn, canvas, plotType, button, startAudio) {
+    const that = this;
+    this.recording = false;
+    this.contourFn = contourFn;
+    this.contour = null;
+    this.canvas = canvas;
+    this.plotType = plotType;
+    this.button = button;
+    this.button.onclick = startAudio(
+      function(audioContext,stream) {
+        that.startRecording(audioContext, stream);
+      }
+    );
+  }
+  
+  update(tone, mean, sd) {
+    this.mean = mean;
+    this.sd = sd;
+    if(tone != null) {
+      const rawContour = this.contourFn(IdealAudioNode.idealTones[tone]);
+      this.contour = [rawContour[0]/IdealAudioNode.height + 0.5, rawContour[1]/IdealAudioNode.height + 0.5];
+      IdealAudioNode.drawLine(this.canvas, this.contour, null);
+    } else {
+      IdealAudioNode.clearCanvas(this.canvas);
+    }
   }
 
   //type is either 'line' or 'trace'
-  startRecording = (audioContext, stream, canvas, contour, type) => {
+  startRecording = (audioContext, stream) => {
     console.log('start');
     if(this.recording) return;
     this.recording = true;
@@ -131,45 +172,14 @@ class Producer {
     let data = new Float32Array(analyzer.fftSize)
 
     let intervalFn;
-    if(type == 'line') intervalFn = this.getLineFn(that, analyzer, data, sampleRate, canvas, contour);
-    else if(type == 'trace') intervalFn = this.getTraceFn(that, analyzer, data, sampleRate, canvas, contour,new Date().getTime() );
-    this.task = setInterval(intervalFn, this.MEASUREMENTINTERVAL)
+    if(this.plotType == 'line') intervalFn = this.getLineFn(that, analyzer, data, sampleRate);
+    else if(this.plotType == 'trace') intervalFn = this.getTraceFn(that, analyzer, data, sampleRate, new Date().getTime() );
 
-    this.timeout = setTimeout(function() {that.stopRecording();}, this.idealTime)
+    this.task = setInterval(intervalFn, IdealAudioNode.measurementInterval)
+
+    this.timeout = setTimeout(function() {that.stopRecording();}, IdealAudioNode.idealTime)
   }
 
-  getLineFn(that, analyzer, data, sampleRate, canvas, contour) {
-    return function() {
-      analyzer.getFloatTimeDomainData(data);
-      let st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
-      let sd = 4;//TODO get standard deviation defined non-statically
-      let redLine = Math.max(0, Math.min(1, 0.5 + (st-that.mean)/sd))
-      Producer.drawLine(canvas, contour, redLine);
-    }
-  }
-
-  getTraceFn(that, analyzer, data, sampleRate, canvas, contour, startTime) {
-    Producer.drawLine(canvas, contour, null);
-    let ctx = canvas.getContext('2d');
-    ctx.beginPath();
-    ctx.strokeStyle = 'red';
-    let cur = null;
-
-    return function() {
-      analyzer.getFloatTimeDomainData(data);
-      let st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
-      let sd = 4;//TODO get standard deviation defined non-statically
-      let y = (1 - Math.max(0, Math.min(1, 0.5 + (st-that.mean)/sd))) * canvas.height
-      let x = ((new Date().getTime() - startTime)/that.idealTime) * canvas.width;
-      if(cur == null) {
-        ctx.moveTo(x,y);
-      } else {
-        ctx.lineTo(x,y);
-        ctx.stroke();
-      }
-      cur = true
-    }
-  }
   stopRecording = () => {
     console.log('stop');
     if(!this.recording) return;
@@ -178,8 +188,44 @@ class Producer {
     clearTimeout(this.timeout)
   }
 
+  getLineFn(that, analyzer, data, sampleRate) {
+    return function() {
+      analyzer.getFloatTimeDomainData(data);
+      let st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
+      let sd = 4;//TODO get standard deviation defined non-statically
+      let redLine = Math.max(0, Math.min(1, 0.5 + (st-that.mean)/sd))
+      IdealAudioNode.drawLine(that.canvas, that.contour, redLine);
+    }
+  }
 
+  getTraceFn(that, analyzer, data, sampleRate, startTime) {
+    IdealAudioNode.drawLine(that.canvas, that.contour, null);
+    let ctx = that.canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.strokeStyle = 'red';
+    let cur = null;
+
+    return function() {
+      analyzer.getFloatTimeDomainData(data);
+      let st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
+      let sd = 4;//TODO get standard deviation defined non-statically
+      let y = (1 - Math.max(0, Math.min(1, 0.5 + (st-that.mean)/sd))) * that.canvas.height
+      let x = ((new Date().getTime() - startTime)/IdealAudioNode.idealTime) * that.canvas.width;
+      if(cur == null) {
+        ctx.moveTo(x,y);
+      } else {
+        ctx.lineTo(x,y);
+        ctx.stroke();
+      }
+      console.log(startTime)
+      cur = true
+    }
+  }
+
+  //static stuff
   //returns start and end point of ideal tone w.r.t Chao tones in semitone space, in units of sd from mean.
+  static measurementInterval = 10;
+  static idealTime = 5000;//TODO make larger, turn off if get close enough in range, changeable for main
   static idealTones = {
     t1: [2,2],
     t2: [-1,2],
@@ -188,11 +234,17 @@ class Producer {
     t5: [-1,0],
     t6: [-1,-1]
   };
-  static idealHeight = 6;//number of sds tall the canvas is, with 0/mean in the middle.
+
+ static height = 6;//number of sds tall the canvas is, with 0/mean in the middle.
+  static clearCanvas(canvas) {
+    let ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    ctx.beginPath();
+  }
 
   //start, end are floats between 0 and 1, and go UP
   static drawLine(canvas, contour, redLine) {
-    Producer.clearCanvas(canvas);
+    IdealAudioNode.clearCanvas(canvas);
     let ctx = canvas.getContext('2d');
     ctx.beginPath();
     ctx.moveTo(0,(1-contour[0])*canvas.height);
@@ -207,29 +259,5 @@ class Producer {
       ctx.stroke();
     }
   }
-
-  static clearCanvas(canvas) {
-    let ctx = canvas.getContext('2d');
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-    ctx.beginPath();
-  }
-
-  updateIdeal(that) {
-    if(that.tones.includes(that.tone) && that.calibrated) {
-      let contour = Producer.idealTones[that.tone];
-      let frac = [contour[0]/Producer.idealHeight + 0.5, contour[1]/Producer.idealHeight + 0.5]
-      that.idealContours = {
-        start: [frac[0], frac[0]],
-        main: [frac[0], frac[1]],
-        end: [frac[1], frac[1]]
-      }
-      for(const [key, val] of Object.entries(that.idealElements)) {
-        Producer.drawLine(val, that.idealContours[key], null);
-      }
-    } else {
-      for(const [key, val] of Object.entries(that.idealElements)) {
-        Producer.clearCanvas(val);
-      }
-    }
-  }
 }
+
