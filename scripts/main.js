@@ -10,9 +10,10 @@ window.onload = function() {
 
   //production initialization
   let producer = new Producer(document, startAudio, cache);
+  let listener = new Listener(document, startAudio, cache);
 
   //mode switcher
-  initializeModeSwitcher(document, calibrator, producer);
+  initializeModeSwitcher(document, calibrator, producer, listener);
 
   // monkeypatch Web Audio
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -33,7 +34,7 @@ function startAudio(f) {
               echoCancellation: false,
               latency: 0,
               noiseSuppression: false,
-              sampleRate: 48000,
+              sampleRate: 16000,
               sampleSize: 16,
               volume: 1.0
             }

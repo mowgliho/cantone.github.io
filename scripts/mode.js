@@ -1,9 +1,9 @@
-function initializeModeSwitcher(document, calibrator, producer) {
+function initializeModeSwitcher(document, calibrator, producer, listener) {
   let modes = ['calib','produce','listen'];
   let data = {
     calib: {cl: calibrator},
     produce: {cl:producer},
-    listen: {cl:null}
+    listen: {cl:listener}
   };
 
   activateMode = function(m) {
@@ -22,4 +22,3 @@ function initializeModeSwitcher(document, calibrator, producer) {
       document.getElementById("mode-" + mode).onclick = function() { activateMode(mode)}
   }
 }
-
