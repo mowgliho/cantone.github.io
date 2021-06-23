@@ -19,12 +19,12 @@ class IdealProducer {
     that.nodes = {}
     for(const x of ['start','main','end']) {
       const canvas = document.getElementById('produce-ideal-' + x + '-col');
-      const plotType = x == 'main'? 'trace':'line';
+      const type = x == 'main'? 'trace':'line';
       const button = document.getElementById("produce-ideal-" + x + "-button")
       const contourFn = x == 'start'? function(c) { return([c[0],c[0]])}: 
         x == 'main'? function(c) { return([c[0],c[1]])}:
         function(c) {return([c[1],c[1]])};
-      that.nodes[x] = new IdealAudioNode(contourFn, canvas, plotType, button, startAudio);
+      that.nodes[x] = new IdealAudioNode(contourFn, canvas, type, button, startAudio);
     }
   }
 
@@ -51,21 +51,21 @@ class IdealAudioNode {
   mean;
   sd;
 
-  task;
-  timeout;
+  guideNode;
+  timeouts = [];
   recording;
 
-  constructor(contourFn, canvas, plotType, button, startAudio) {
+  constructor(contourFn, canvas, type, button, startAudio) {
     const that = this;
     this.recording = false;
     this.contourFn = contourFn;
     this.contour = null;
     this.canvas = canvas;
-    this.plotType = plotType;
+    this.type = type;
     this.button = button;
     this.button.onclick = startAudio(
       function(audioContext,stream) {
-        that.startRecording(audioContext, stream);
+        that.start(audioContext, stream);
       }
     );
   }
@@ -73,7 +73,7 @@ class IdealAudioNode {
   update(tone, mean, sd) {
     this.tone = tone;
     this.mean = mean;
-    this.sd = sd;
+    this.sd = 4;//TODO get standard deviation defined non-statically
     if(Object.keys(IdealAudioNode.idealTones).includes(this.tone)) {
       const rawContour = this.contourFn(IdealAudioNode.idealTones[tone]);
       this.contour = [rawContour[0]/IdealAudioNode.height + 0.5, rawContour[1]/IdealAudioNode.height + 0.5];
@@ -84,13 +84,14 @@ class IdealAudioNode {
   }
 
   //type is either 'line' or 'trace'
-  startRecording = (audioContext, stream) => {
+  start = (audioContext, stream) => {
     console.log('start');
     if(this.recording) return;
     this.recording = true;
 
     let that = this;
 
+    //setup recording/analyzing
     let analyzer = audioContext.createAnalyser();
     analyzer.fftsize = Math.pow(2,9);
     audioContext.createMediaStreamSource(stream).connect(analyzer)
@@ -98,28 +99,54 @@ class IdealAudioNode {
     let data = new Float32Array(analyzer.fftSize)
 
     let intervalFn;
-    if(this.plotType == 'line') intervalFn = this.getLineFn(that, analyzer, data, sampleRate);
-    else if(this.plotType == 'trace') intervalFn = this.getTraceFn(that, analyzer, data, sampleRate, new Date().getTime() );
+    let guideTime;
+    if(this.type == 'line') {
+      intervalFn = this.getLineFn(that, analyzer, data, sampleRate);
+      //guidetone
+      const freq = IdealAudioNode.getFreq(this.contour[0], this.sd, this.mean);
+      this.guideNode = audioContext.createOscillator();
+      this.guideNode.frequency.value = freq;
+      guideTime = IdealAudioNode.idealTime/2;
+    } else if(this.type == 'trace') {
+      intervalFn = this.getTraceFn(that, analyzer, data, sampleRate, new Date().getTime() );
+      //guidetone
+      const startFreq = IdealAudioNode.getFreq(this.contour[0], this.sd, this.mean);
+      const endFreq = IdealAudioNode.getFreq(this.contour[1], this.sd, this.mean);
+      this.guideNode = audioContext.createBufferSource();
+      var buffer = audioContext.createBuffer(1, sampleRate * IdealAudioNode.idealTime/1000, sampleRate);
+      var bufferData = buffer.getChannelData(0);
+      IdealAudioNode.fillContourArray(bufferData, sampleRate, startFreq, endFreq);
+      this.guideNode.buffer = buffer;
+      guideTime = IdealAudioNode.idealTime;
+    }
+    this.guideNode.start();
+    this.guideNode.connect(audioContext.destination);
 
-    this.task = setInterval(intervalFn, IdealAudioNode.measurementInterval)
-
-    this.timeout = setTimeout(function() {that.stopRecording();}, IdealAudioNode.idealTime)
+    this.timeouts.push(setInterval(intervalFn, IdealAudioNode.measurementInterval));
+    this.timeouts.push(setTimeout(function() {that.stopGuide();}, guideTime));
+    this.timeouts.push(setTimeout(function() {that.stop();}, IdealAudioNode.idealTime));
   }
 
-  stopRecording = () => {
+ stopGuide = () => {
+    this.guideNode.stop();
+  }
+
+  stop = () => {
     console.log('stop');
     if(!this.recording) return;
     this.recording = false;
-    clearTimeout(this.task)
-    clearTimeout(this.timeout)
+    this.guideNode.stop()
+    for(const timeout of this.timeouts) {
+      clearTimeout(timeout);
+    }
+    this.timeouts = []
   }
 
   getLineFn(that, analyzer, data, sampleRate) {
     return function() {
       analyzer.getFloatTimeDomainData(data);
       let st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
-      let sd = 4;//TODO get standard deviation defined non-statically
-      let redLine = Math.max(0, Math.min(1, 0.5 + (st-that.mean)/sd))
+      let redLine = Math.max(0, Math.min(1, 0.5 + (st-that.mean)/that.sd/IdealAudioNode.height))
       IdealAudioNode.drawLine(that.canvas, that.contour, redLine);
     }
   }
@@ -134,8 +161,7 @@ class IdealAudioNode {
     return function() {
       analyzer.getFloatTimeDomainData(data);
       let st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
-      let sd = 4;//TODO get standard deviation defined non-statically
-      let y = (1 - Math.max(0, Math.min(1, 0.5 + (st-that.mean)/sd))) * that.canvas.height
+      let y = (1-Math.max(0, Math.min(1, 0.5 + (st-that.mean)/that.sd/IdealAudioNode.height))) * that.canvas.height;
       let x = ((new Date().getTime() - startTime)/IdealAudioNode.idealTime) * that.canvas.width;
       if(cur == null) {
         ctx.moveTo(x,y);
@@ -148,9 +174,8 @@ class IdealAudioNode {
   }
 
   //static stuff
-  //returns start and end point of ideal tone w.r.t Chao tones in semitone space, in units of sd from mean.
   static measurementInterval = 10;
-  static idealTime = 5000;//TODO make larger, turn off if get close enough in range, changeable for main
+  static idealTime = 2000;//TODO make larger, turn off if get close enough in range, changeable for main
   static idealTones = {
     t1: [2,2],
     t2: [-1,2],
@@ -160,7 +185,25 @@ class IdealAudioNode {
     t6: [-1,-1]
   };
 
- static height = 6;//number of sds tall the canvas is, with 0/mean in the middle.
+  static height = 6;//number of sds tall the canvas is, with 0/mean in the middle.
+
+  //returns start and end point of ideal tone w.r.t Chao tones in semitone space, in units of sd from mean.
+  static getFreq(val, sd, mean) {
+    const st = (val - 0.5)*IdealAudioNode.height * sd + mean;
+    return(Math.pow(2,(st - 49)/12) * 440);
+  }
+
+  //does linear interpolation (in log space!)
+  static fillContourArray(array, sampleRate, startFreq, endFreq) {
+    const len = array.length;
+    var phase = 0;
+    for(var i = 0; i < len; i++) {
+      const freq = Math.exp(((len - i)/len) * Math.log(startFreq) + (i/len) * Math.log(endFreq));
+      phase += 2 * Math.PI * freq / sampleRate;
+      array[i] = Math.sin(phase);
+    }
+  }
+ 
   static clearCanvas(canvas) {
     let ctx = canvas.getContext('2d');
     ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -185,4 +228,3 @@ class IdealAudioNode {
     }
   }
 }
-
