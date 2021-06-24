@@ -10,7 +10,7 @@ window.onload = function() {
 
   //production initialization
   let producer = new Producer(document, startAudio, cache);
-  let listener = new Listener(document, startAudio, cache);
+  let listener = new Listener(document, startAudio);
 
   //mode switcher
   initializeModeSwitcher(document, calibrator, producer, listener);

@@ -17,6 +17,7 @@
     <script src="scripts/calib.js"></script>
     <script src="scripts/produce_ideal.js"></script>
     <script src="scripts/produce.js"></script>
+    <script src="scripts/listen_mono.js"></script>
     <script src="scripts/listen.js"></script>
     <!-- Include the main app logic -->
     <script src="scripts/main.js"></script>
@@ -76,8 +77,22 @@
 
     <!-- listening -->
     <div id="div-listen" style="display: none;">
-      <button id="listen-play-button">講</button>
-      <div id="listen-transcription" style="display:inline-block">Transcription</div>
+      <div id="div-listen-mode">
+        <button id="listen-mode-mono">Monosyllable</button>
+        <button id="listen-mode-wang">Wang</button>
+        <button id="listen-mode-match">Match</button>
+        <button id="listen-mode-phrase">Phrase</button>
+      </div>
+      <hr>
+      <div id="div-listen-wang" style="display:none;">
+        BLAH
+      </div>
+      <div id="div-listen-mono" style="display:none;">
+        <button id="listen-mono-button">講</button>
+        <div id="listen-mono-transcription" style="display:inline-block">Transcription</div>
+      </div>
+      <div id="div-listen-match" style="display:none;">
+      <div id="div-listen-phrase" style="display:none;">
     </div>
  
   </body>

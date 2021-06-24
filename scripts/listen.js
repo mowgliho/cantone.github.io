@@ -1,15 +1,40 @@
 class Listener {
-  tones = ['1','2','3','4','5','6']
+  //general
+  modes = [null,'mono','wang','match','phrase'];
+  listeners;
+  divs;
+
+  //state
+  mode;
+
+
+
+
   transcriptionDiv;
 
-  constructor(document, startAudio, cache) {
+  constructor(document, startAudio) {
     const that = this;
-    this.transcriptionDiv = document.getElementById("listen-transcription");
-    document.getElementById("listen-play-button").onclick = startAudio(
-      function(audioContext,stream) {
-        that.play(audioContext, stream);
-      }
-    );
+
+    this.listeners = {
+      null: null,
+      mono: new MonoListener(document, startAudio),
+      wang: null,
+      match: null,
+      phrase: null
+    }
+
+    this.divs = {}
+    for(const mode of this.modes) {
+      if(mode != null) this.divs[mode] = document.getElementById('div-listen-' + mode);
+    }
+
+    //connect up all modes to functionality
+    this.mode = null;
+    for(const mode of this.modes) {
+      if(mode != null) document.getElementById('listen-mode-' + mode).onclick = function() { that.mode = mode; that.update();};
+    }
+
+    this.update();
   }
 
   activate() {
@@ -17,49 +42,14 @@ class Listener {
   }
 
   update() {
-  }
-
-  //Note: https://dev.to/dengel29/loading-local-files-in-firefox-and-chrome-m9f
-  play(audioContext, stream) {
-    var toneOrder = Listener.shuffle(this.tones);
-    this.transcriptionDiv.innerHTML = '';
-    const divs = {}
-    for(const tone of toneOrder) {
-      let div = document.createElement('div');
-      div.innerHTML = tone;
-      div.style = 'display:inline-block;';
-      this.transcriptionDiv.appendChild(div);
-      divs[tone] = div;
+    //show correct div
+    for(const m of this.modes) {
+      if(m == null) {
+      } else if(m == this.mode) {
+        this.divs[m].style = 'display:block;';
+      } else {
+        this.divs[m].style = 'display:none;';
+      }
     }
-    this.playTones(divs, toneOrder);
-  }
-
-  playTones(divs, tones) {
-    if(tones.length == 0) return;
-    const tone = tones[0]
-    const that = this;
-    //color divs
-    for(const [key,val] of Object.entries(divs)) {
-      if(key == tone) val.style = 'display:inline-block;color:red;'
-      else val.style = 'display:inline-block;color:black;'
-    }
-    //play audio
-    var audio = new Audio('wav/humanum/si' + tone + '.wav');
-    audio.onended = function() { that.playTones(divs, tones.slice(1))};
-    audio.play();
-  }
-
-  static shuffle(array) {
-    var idx = array.length,  randomIndex;
-    while (0 !== idx) {
-      // Pick a remaining element...
-      const rIdx = Math.floor(Math.random() * idx);
-      idx--;
-
-      // And swap it with the current element.
-      [array[idx], array[rIdx]] = [
-        array[rIdx], array[idx]];
-    }
-    return array;
   }
 }
