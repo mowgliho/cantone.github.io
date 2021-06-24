@@ -17,8 +17,8 @@ class Listener {
 
     this.listeners = {
       null: null,
-      mono: new MonoListener(document, startAudio),
-      wang: null,
+      mono: new MonoListener(document),
+      wang: new WangListener(document),
       match: null,
       phrase: null
     }

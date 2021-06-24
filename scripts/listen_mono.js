@@ -1,18 +1,14 @@
 class MonoListener {
   transcriptionDiv;
 
-  constructor(document, startAudio) {
+  constructor(document) {
     const that = this;
     this.transcriptionDiv = document.getElementById("listen-mono-transcription");
-    document.getElementById("listen-mono-button").onclick = startAudio(
-      function(audioContext,stream) {
-        that.play(audioContext, stream);
-      }
-    );
+    document.getElementById("listen-mono-button").onclick = function() { that.play();}
   }
 
   //Note: https://dev.to/dengel29/loading-local-files-in-firefox-and-chrome-m9f
-  play(audioContext, stream) {
+  play() {
     var toneOrder = MonoListener.shuffle(MonoListener.tones);
     this.transcriptionDiv.innerHTML = '';
     const divs = {}
