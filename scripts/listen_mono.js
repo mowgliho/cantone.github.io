@@ -1,5 +1,8 @@
 class MonoListener {
+  static sounds = ['fan','fu','haam','ham','hau','hon','jam','jan','jau','ji','jim','jin','jing','jiu','joeng','jung','jyu','jyun','se','seoi','seon','si','sin','soeng','syu','syun','wai','wan']
+
   transcriptionDiv;
+  sound;
 
   constructor(document) {
     const that = this;
@@ -9,6 +12,7 @@ class MonoListener {
 
   //Note: https://dev.to/dengel29/loading-local-files-in-firefox-and-chrome-m9f
   play() {
+    this.sound = WangListener.sounds[Math.floor(Math.random() * WangListener.sounds.length)];
     var toneOrder = MonoListener.shuffle(MonoListener.tones);
     this.transcriptionDiv.innerHTML = '';
     const divs = {}
@@ -32,7 +36,7 @@ class MonoListener {
       else val.style = 'display:inline-block;color:black;'
     }
     //play audio
-    var audio = new Audio('wav/humanum/si' + tone + '.wav');
+    var audio = new Audio('wav/humanum/' + this.sound +  tone + '.wav');
     audio.onended = function() { that.playTones(divs, tones.slice(1))};
     audio.play();
   }
