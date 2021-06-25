@@ -48,30 +48,34 @@ To keep things simple, we won't cache progress: and just go in order every time.
 */
 
 class WangListener {
+  static tones = [1,2,3,4,5,6];
   static iterationsPerPair = 2;
   static pairOrder = [
     [1,2],[1,4],[1,6],[2,4],[2,6],
     [2,3],[1,5],[3,4],[2,5],[4,5],
     [5,6],[1,3],[3,5],[4,6],[3,6]
   ];
+  static playAudio(f, fn) {
+    var audio = new Audio(fn);
+    audio.onended = f;
+    audio.play();
+  }
 
-  states = ['start', 'pick', 'correct', 'other', 'next'];//order is important
+
+//  states = ['playing', 'start', 'pick', 'correct', 'other', 'next'];
 
   //divs and gui stuff
   trainDiv;
   doneDiv;
-  divs;
-  pickLeft;
-  pickRight;
-  correctDiv;
-  otherDiv;
-  playStartButton;
+  buttons;
+  playButton;
+  nextButton;
+  text;
 
   //training state
   pair;
   iteration;
   done;
-  correct;
 
   //cur state
   startTone;
@@ -81,48 +85,106 @@ class WangListener {
   constructor(document) {
     const that = this;
 
-    //set divs
-    this.divs = {};
-    for(const state of this.states) {
-      this.divs[state] = document.getElementById('div-listen-wang-' + state);
+    this.text = document.getElementById('div-listen-wang-text');
+    this.buttons = {}
+    const buttonDiv = document.getElementById("div-listen-wang-buttons");
+    for(const tone of WangListener.tones) {
+      const button = document.createElement('button');
+      button.className = 'wang-button';
+      button.innerHTML = 'Tone ' + tone;
+      buttonDiv.appendChild(button);
+      button.onclick = function() {that.click(tone)};
+      this.buttons[tone] = button;
     }
+    this.playButton = document.getElementById("listen-wang-play-button");
+    this.playButton.onclick = function() {that.play()};
+    this.nextButton = document.getElementById('listen-wang-next')
+    this.nextButton.onclick = function() { that.nextTrial(); };
+
     this.trainDiv = document.getElementById('div-listen-wang-train');
     this.doneDiv = document.getElementById('div-listen-wang-done');
-    this.pickLeft = document.getElementById('listen-wang-pick-left');
-    this.pickRight = document.getElementById('listen-wang-pick-right');
-    this.correctDiv = document.getElementById('div-listen-wang-correct-text');
-    this.otherDiv = document.getElementById('div-listen-wang-other-text');
-    this.playStartButton = document.getElementById('listen-wang-start-play');
-    this.playCorrectButton = document.getElementById('listen-wang-correct-play');
-    this.playOtherButton = document.getElementById('listen-wang-other-play');
 
-    //hook up
-    document.getElementById('listen-wang-next').onclick = function() { that.nextTrial(); };
-    document.getElementById('listen-wang-start-play').onclick = function() { 
-      that.playStartButton.style = "display:none;";
-      that.playStart(function() {
-        that.state = 'pick'
-        that.update();
-      });
-    };
-    document.getElementById('listen-wang-pick-left').onclick = function() { that.pick('left');};
-    document.getElementById('listen-wang-pick-right').onclick = function() { that.pick('right');};
-    document.getElementById('listen-wang-correct-play').onclick = function() { 
-      that.playCorrectButton.style = "display:none;";
-      that.playStart(function() {
-        that.state = 'other';
-        that.update();
-      });
-    };
-    document.getElementById('listen-wang-other-play').onclick = function() { 
-      that.playOtherButton.style = "display:none;";
-      that.playOther(function() {
-        that.state = 'next'
-        that.update();
-      });
-    };
     this.initialize();
     this.update();
+  }
+
+  click(tone) {
+    if(this.state == 'pick') {
+      this.picked = tone;
+      this.state = 'correct';
+      this.update();
+    }
+  }
+
+  pick(button) {
+    if(this.state == 'pick') {
+      const guess = (button == 'left'? this.pickLeft: this.pickRight).innerHTML.slice(-1);
+      this.correct = guess == this.startTone;
+      this.state = 'correct';
+    }
+    this.update();
+  }
+
+  play() {
+    const that = this;
+    if(this.state == 'start') {
+      this.state = 'playing';
+      WangListener.playAudio(function() {that.state = 'pick'; that.update(); }, 'wav/humanum/' + this.sound + this.startTone + '.wav');
+    } else if(this.state == 'correct') {
+      this.state = 'playing';
+      WangListener.playAudio(function() {that.state = 'other'; that.update(); }, 'wav/humanum/' + this.sound + this.startTone + '.wav');
+    } else if(this.state == 'other') {
+      this.state = 'playing';
+      WangListener.playAudio(function() {that.state = 'next'; that.update(); }, 'wav/humanum/' + this.sound + this.otherTone + '.wav');
+    }
+    this.update();
+  }
+
+  update() {
+    if(this.done) {
+      this.trainDiv.style = 'display:none;';
+      this.doneDiv.style = 'display:block;';
+    } else {
+      this.doneDiv.style = 'display:none;';
+      this.trainDiv.style = 'display:block;';
+      if(this.state == 'start') {
+        this.text.innerHTML = "What tone is this?"
+        this.text.style.color = "black";
+        for(const button of Object.values(this.buttons)) {
+          button.style.opacity = 1;
+          button.style.backgroundColor = '';
+        }
+        this.playButton.innerHTML = 'Play!';
+        this.playButton.style.visibility = 'visible';
+        this.nextButton.style.visibility = 'hidden';
+      } else if(this.state == 'pick') {
+        for(const [tone, button] of Object.entries(this.buttons)) {
+          if(this.pair.includes(parseInt(tone))) {
+          } else {
+            button.style.opacity = 0.4;
+          }
+        }
+        this.playButton.style.visibility = 'hidden';
+      } else if(this.state == 'correct') {
+        const correct = this.picked == this.startTone;
+        this.text.innerHTML = "That was tone " + this.startTone;
+        this.text.style.color = correct?'Green':'Red';
+        for(const tone of this.pair) {
+          if(tone == this.startTone) this.buttons[tone].style.backgroundColor = 'LawnGreen';
+          else if(tone == this.picked) this.buttons[tone].style.backgroundColor = 'Red';
+        }
+        this.playButton.innerHTML = 'Play Tone ' + this.startTone + ' Again';
+        this.playButton.style.visibility = 'visible';
+      } else if(this.state == 'other') {
+        this.text.innerHTML = "Tone " + this.otherTone + " sounds like:"
+        this.text.style.color = "black";
+        this.playButton.innerHTML = "Play Tone " + this.otherTone;
+        this.playButton.style.visibility = 'visible';
+      } else if(this.state == 'next') {
+        this.playButton.style.visibility = 'hidden';
+        this.nextButton.style.visibility = 'visible';
+      }
+    }
   }
 
   initialize() {
@@ -131,7 +193,6 @@ class WangListener {
     this.iteration = 0;
     this.nextTrial();
   }
-
 
   //sets up to play next pair
   nextTrial() {
@@ -163,59 +224,5 @@ class WangListener {
       this.otherTone = this.pair[1-startIdx];
     }
     this.update();
-  }
-
-  update() {
-    if(this.done) {
-      this.trainDiv.style = 'display:none;';
-      this.doneDiv.style = 'display:block;';
-    } else {
-      this.doneDiv.style = 'display:none;';
-      this.trainDiv.style = 'display:block;';
-      //start div
-      if(this.state == 'start') {
-        this.playStartButton.style = "display:inline-block;";
-        const order = Math.floor(Math.random() * 2);//randomize buttons
-        this.pickLeft.innerHTML = 'Tone ' + this.pair[order];
-        this.pickRight.innerHTML = 'Tone ' + this.pair[1-order];
-      } else if(this.state == 'correct') {
-        this.playCorrectButton.style = "display:inline-block;";
-        //correct div
-        this.correctDiv.innerHTML = 'That was tone ' + this.startTone + '.';
-        this.correctDiv.style = 'color:' + (this.correct?'black':'red') + ';display:inline;';
-      } else if(this.state == 'other') {
-        this.playOtherButton.style = "display:inline-block;";
-        this.otherDiv.innerHTML = 'This is tone ' + this.otherTone + '.';
-      }
-      var before = true;
-      //makes all visible up to match
-      for(const [state,div] of Object.entries(this.divs)) {
-        div.style = before?"display:block;":"display:none";
-        if(state == this.state) before = false;;
-      }
-    }
-  }
-
-  pick(button) {
-    if(this.state == 'pick') {
-      const guess = (button == 'left'? this.pickLeft: this.pickRight).innerHTML.slice(-1);
-      this.correct = guess == this.startTone;
-      this.state = 'correct';
-    }
-    this.update();
-  }
-
-  playStart(f) {
-    this.playAudio(f, 'wav/humanum/' + this.sound + this.startTone + '.wav');
-  }
-
-  playOther(f) {
-    this.playAudio(f, 'wav/humanum/' + this.sound + this.otherTone + '.wav');
-  }
-  
-  playAudio(f, fn) {
-    var audio = new Audio(fn);
-    audio.onended = f;
-    audio.play();
   }
 }

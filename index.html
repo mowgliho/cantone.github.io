@@ -6,8 +6,7 @@
 <html>
   <head>
     <title>Cantone</title>
-    <style>
-    </style>
+    <link href="styles/style.css" rel="stylesheet">
     <!-- libraries -->
     <script src="scripts/yin.js"></script>
     <!-- setup -->
@@ -87,22 +86,14 @@
       <hr>
       <div id="div-listen-wang" style="display:none;">
         <div id="div-listen-wang-train" style="display:none;">
-          <div id="div-listen-wang-start" style="display:none;">
-            Which tone is this? <button id="listen-wang-start-play" style="display:inline-block;">Play</button>
+          <div>
+            <div id="div-listen-wang-text" style="display:inline-block"></div>
+            <button id="listen-wang-play-button" style="display:inline-block">Play</button>
+            <br><br>
           </div>
-          <div id="div-listen-wang-pick" style="display:none;">
-            <button id="listen-wang-pick-left"></button>
-            <button id="listen-wang-pick-right" style="display:inline-block;"></button>
-          </div>
-          <div id="div-listen-wang-correct" style="display:none;">
-            <div id='div-listen-wang-correct-text'></div> 
-            <button id="listen-wang-correct-play" style="display:inline-block">Play Again</button>
-          </div>
-          <div id="div-listen-wang-other" style="display:none;">
-            <div id="div-listen-wang-other-text" style="display:inline-block;"></div> 
-            <button id="listen-wang-other-play">Play</button>
-          </div>
-          <div id="div-listen-wang-next" style="display:none;">
+          <div id="div-listen-wang-buttons" style="display:block;"></div>
+          <div>
+            <br><br>
             <button id="listen-wang-next">Next</button>
           </div>
         </div>
