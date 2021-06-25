@@ -48,6 +48,7 @@ To keep things simple, we won't cache progress: and just go in order every time.
 */
 
 class WangListener {
+  static sounds = ['fan','fu','haam','ham','hau','hon','jam','jan','jau','ji','jim','jin','jing','jiu','joeng','jung','jyu','jyun','se','seoi','seon','si','sin','soeng','syu','syun','wai','wan']
   static tones = [1,2,3,4,5,6];
   static iterationsPerPair = 2;
   static pairOrder = [
@@ -218,7 +219,7 @@ class WangListener {
     }
     if(!this.done) {
       this.state = 'start';
-      this.sound = 'si';//TODO change to change sounds around
+      this.sound = WangListener.sounds[Math.floor(Math.random() * WangListener.sounds.length)];
       const startIdx = Math.floor(Math.random() * 2);
       this.startTone = this.pair[startIdx];
       this.otherTone = this.pair[1-startIdx];
