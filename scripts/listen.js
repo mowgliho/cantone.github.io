@@ -19,7 +19,7 @@ class Listener {
       null: null,
       mono: new MonoListener(document),
       wang: new WangListener(document),
-      match: null,
+      match: new MatchListener(document),
       phrase: null
     }
 
