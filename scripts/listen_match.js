@@ -21,7 +21,7 @@ class MatchListener {
   //trial state
   mouseStart;
   lines;
-  wrongLines;
+  checkedLines;
 
   constructor(document) {
     const that = this;
@@ -148,15 +148,19 @@ class MatchListener {
 
   correct() {
     this.state = 'checked';
+    const correctAnswers = [];
     for(const [key,value] of Object.entries(this.lines)) {
       const correctTone = this.stimSounds[key].charAt(this.stimSounds[key].length-1);
-      if(correctTone != value['guess'] + 1) {
-        this.wrongLines.push({
-          startY: MatchListener.toneHeight*(0.5+parseInt(key)), 
-          endY: MatchListener.toneHeight*(0.5+parseInt(correctTone)-1),
-          color:'red'
-        });
-      }
+      const correctAnswer = correctTone == value['guess']+1;
+      if(correctAnswer) correctAnswers.push(key);
+      this.checkedLines.push({
+        startY: MatchListener.toneHeight*(0.5+parseInt(key)), 
+        endY: MatchListener.toneHeight*(0.5+parseInt(correctTone)-1),
+        color:correctAnswer? 'green': 'red',
+      });
+    }
+    for(const key of correctAnswers) {
+      delete this.lines[key];
     }
     this.update();
   }
@@ -198,17 +202,18 @@ class MatchListener {
       ctx.fillText(text + clickBox['suffix'],(dim['minX'] + dim['maxX'])/2,(dim['minY']+dim['maxY'])/2);
     }
     for(var line of Object.values(this.lines)) {
-      MatchListener.drawLine(this.canvas, ctx, line);
+      MatchListener.drawLine(this.canvas, ctx, line, this.state == 'checked'?true:false);
     }
-    for(var line of this.wrongLines) {
-      MatchListener.drawLine(this.canvas, ctx,line);
+    for(var line of this.checkedLines) {
+      MatchListener.drawLine(this.canvas, ctx,line, false);
     }
     //buttons and divs
     this.correctButton.style.visibility = this.state == 'ready'?'visible':'hidden';
   }
 
-  static drawLine(canvas, ctx, line) {
+  static drawLine(canvas, ctx, line, dashed) {
     ctx.strokeStyle = line['color'];
+    ctx.setLineDash(dashed?[5,15]:[]);
     ctx.beginPath();
     ctx.moveTo(MatchListener.buttonWidth*2, line['startY']);
     ctx.lineTo(canvas.width - MatchListener.buttonWidth*2, line['endY']);
@@ -233,7 +238,7 @@ class MatchListener {
     }
     this.state = 'pick';
     this.lines = {}
-    this.wrongLines = []
+    this.checkedLines = []
     this.mouseStart = null;
     this.update();
   }
