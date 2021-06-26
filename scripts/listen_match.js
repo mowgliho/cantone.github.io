@@ -4,12 +4,12 @@ class MatchListener {
   static toneHeight = 60;
   static buttonWidth = 75;
   static tones = [1,2,3,4,5,6];
-  static states = ['pick','mouse','next'];//no playing state: can play multiple at once
+  static states = ['pick','mouse','ready','checked'];//no playing state: can play multiple at once
 
   canvas;
   clickBoxes;
   correctButton;
-  nextDiv;
+  newDiv;
 
   //state
   state;
@@ -19,7 +19,9 @@ class MatchListener {
   stimSounds;
 
   //trial state
+  mouseStart;
   lines;
+  wrongLines;
 
   constructor(document) {
     const that = this;
@@ -40,17 +42,39 @@ class MatchListener {
     this.clickBoxes = [];
     for(var i = 0; i < MatchListener.tones.length; i++) {
       const boxId = i;
+      const startY = i*MatchListener.toneHeight;
+      const endY = (i+1)*MatchListener.toneHeight;
       //play stimuli
       this.clickBoxes.push(MatchListener.clickBox(
-        0, MatchListener.buttonWidth, i*MatchListener.toneHeight, (i+1)*MatchListener.toneHeight,
+        '',
+        0, MatchListener.buttonWidth, startY, endY,
         'stim',
-        function() {that.playStimuli(boxId);})
+        function() {that.playStimuli(boxId);},
+        '')
+      );
+      //match boxes
+      this.clickBoxes.push(MatchListener.clickBox(
+        i,
+        MatchListener.buttonWidth, 2*MatchListener.buttonWidth, startY, endY,
+        'match',
+        function() {that.match(boxId, true);},
+        '')
+      );
+      //target boxes
+      this.clickBoxes.push(MatchListener.clickBox(
+        '',
+        this.canvas.width - 2*MatchListener.buttonWidth, this.canvas.width - MatchListener.buttonWidth, startY, endY,
+        'target',
+        function() {that.match(boxId, false);},
+        boxId + 1)
       );
       //reference stimuli
       this.clickBoxes.push(MatchListener.clickBox(
-        this.canvas.width - MatchListener.buttonWidth, this.canvas.width, i*MatchListener.toneHeight, (i+1)*MatchListener.toneHeight,
+        '',
+        this.canvas.width - MatchListener.buttonWidth, this.canvas.width, startY, endY,
         'ref',
-        function() {that.playReference(boxId);})
+        function() {that.playReference(boxId);},
+        '')
       );
     }
     //correct button
@@ -58,26 +82,49 @@ class MatchListener {
     this.correctButton.innerHTML = 'Check Answers';
     this.correctButton.onclick = function() {that.correct();}
     div.appendChild(that.correctButton);
-    //next
-    this.nextDiv = document.createElement('div');
-    const nextButton = document.createElement('button');
-    nextButton.innerHTML = 'Next';
-    this.nextDiv.appendChild(nextButton);
+    //new
+    this.newDiv = document.createElement('div');
+    const newButton = document.createElement('button');
+    newButton.innerHTML = 'New Set';
+    this.newDiv.appendChild(newButton);
     //checkboxes
-    const ref = MatchListener.createCheckbox(document,this.nextDiv,'no reference tones','ref');
-    const scramble = MatchListener.createCheckbox(document,this.nextDiv,'scrambled sounds','scramble');
-    const injective = MatchListener.createCheckbox(document,this.nextDiv,'non-injective','inject');
+    const ref = MatchListener.createCheckbox(document,this.newDiv,'no reference tones','ref');
+    const scramble = MatchListener.createCheckbox(document,this.newDiv,'scrambled sounds','scramble');
+    const injective = MatchListener.createCheckbox(document,this.newDiv,'non-injective','inject');
     //onclick
-    nextButton.onclick = function() {that.next(!ref.checked, scramble.checked, !injective.checked);}//note the ! to reverse because of text to match
-    div.appendChild(this.nextDiv);
-    nextButton.onclick();
+    newButton.onclick = function() {that.new(!ref.checked, scramble.checked, !injective.checked);}//note the ! to reverse because of text to match
+    div.appendChild(this.newDiv);
+    newButton.onclick();
   }
 
-  static clickBox(minX, maxX, minY, maxY, type, callback) {
+  //id of box, start is whether is start of arrow or end
+  match(id, start) {
+    if((this.state == 'pick' || this.state == 'ready') && start) {
+      this.state = 'mouse';
+      this.mouseStart = id;
+    } else if(this.state == 'mouse') {
+      if(start && id == this.mouseStart) {
+        this.state = 'pick';
+      } else if(!start) {
+        this.state = 'pick';
+        if(Object.keys(this.lines).includes(this.mouseStart)) delete this.lines[this.mouseStart];
+        this.lines[this.mouseStart] = {
+          startY: MatchListener.toneHeight*(0.5+this.mouseStart), 
+          endY: MatchListener.toneHeight*(0.5+id),
+          guess: id,
+          color: 'black'};
+      }
+    }
+    this.update();
+  }
+
+  static clickBox(id, minX, maxX, minY, maxY, type, callback, suffix) {
     const cback = callback;
     return {
+      id: id,
       dims:{minX:minX, maxX: maxX, minY:minY, maxY:maxY},
       type: type,
+      suffix: suffix,
       func: function(x,y) {
         if(x > minX && x < maxX && y > minY && y < maxY) callback();
       }
@@ -100,18 +147,43 @@ class MatchListener {
   }
 
   correct() {
-    this.state = 'next';
+    this.state = 'checked';
+    for(const [key,value] of Object.entries(this.lines)) {
+      const correctTone = this.stimSounds[key].charAt(this.stimSounds[key].length-1);
+      if(correctTone != value['guess'] + 1) {
+        this.wrongLines.push({
+          startY: MatchListener.toneHeight*(0.5+parseInt(key)), 
+          endY: MatchListener.toneHeight*(0.5+parseInt(correctTone)-1),
+          color:'red'
+        });
+      }
+    }
     this.update();
   }
 
+  static canvasParams = {
+    stim: {color:'lawngreen',text:'Play'},
+    ref: {color:'lawngreen',text:'Play'},
+    match: {color:'skyblue',text:'Match'},
+    matching: {color:'blue',text:'Match '},
+    target: {color:'skyblue',text:'Tone '}
+  }
+
   update() {
+    //state stuff
+    if(this.state == 'pick' && Object.values(this.lines).length == MatchListener.tones.length) this.state = 'ready';
+    //paint
     var ctx = this.canvas.getContext("2d");
     ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
     for(var clickBox of this.clickBoxes) {
       if(!this.showReference && clickBox['type'] == 'ref') continue;
+      var type = clickBox['type'];
+      if(this.state == 'mouse' && type == 'match' && clickBox['id'] == this.mouseStart) type = 'matching';
+      const color = MatchListener.canvasParams[type]['color'];
+      const text = MatchListener.canvasParams[type]['text'];
       var dim = clickBox['dims']
       //fill rectangle
-      ctx.fillStyle = 'green';
+      ctx.fillStyle = color;
       ctx.fillRect(dim['minX'],dim['minY'],dim['maxX']-dim['minX'],dim['maxY']-dim['minY']);
       //border
       ctx.beginPath();
@@ -123,11 +195,27 @@ class MatchListener {
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.font = '12px Arial';
-      ctx.fillText('Play',(dim['minX'] + dim['maxX'])/2,(dim['minY']+dim['maxY'])/2);
+      ctx.fillText(text + clickBox['suffix'],(dim['minX'] + dim['maxX'])/2,(dim['minY']+dim['maxY'])/2);
     }
+    for(var line of Object.values(this.lines)) {
+      MatchListener.drawLine(this.canvas, ctx, line);
+    }
+    for(var line of this.wrongLines) {
+      MatchListener.drawLine(this.canvas, ctx,line);
+    }
+    //buttons and divs
+    this.correctButton.style.visibility = this.state == 'ready'?'visible':'hidden';
   }
 
-  next(ref, scr, inj) {
+  static drawLine(canvas, ctx, line) {
+    ctx.strokeStyle = line['color'];
+    ctx.beginPath();
+    ctx.moveTo(MatchListener.buttonWidth*2, line['startY']);
+    ctx.lineTo(canvas.width - MatchListener.buttonWidth*2, line['endY']);
+    ctx.stroke();
+  }
+
+  new(ref, scr, inj) {
     this.showReference = ref;
     //next tone
     const sound = MatchListener.sounds[Math.floor(Math.random() * MatchListener.sounds.length)];
@@ -144,6 +232,9 @@ class MatchListener {
       this.stimSounds.push(sounds[i] + tones[i]);
     }
     this.state = 'pick';
+    this.lines = {}
+    this.wrongLines = []
+    this.mouseStart = null;
     this.update();
   }
 
