@@ -91,7 +91,7 @@ class WangListener {
     const buttonDiv = document.getElementById("div-listen-wang-buttons");
     for(const tone of WangListener.tones) {
       const button = document.createElement('button');
-      button.className = 'wang-button';
+      button.className = 'pretty-button';
       button.innerHTML = 'Tone ' + tone;
       buttonDiv.appendChild(button);
       button.onclick = function() {that.click(tone)};
