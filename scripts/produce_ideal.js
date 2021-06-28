@@ -86,6 +86,7 @@ class IdealAudioNode {
   //type is either 'line' or 'trace'
   start = (audioContext, stream) => {
     console.log('start');
+    if(!Object.keys(IdealAudioNode.idealTones).includes(this.tone)) return;
     if(this.recording) return;
     this.recording = true;
 
@@ -102,23 +103,20 @@ class IdealAudioNode {
     let guideTime;
     if(this.type == 'line') {
       intervalFn = this.getLineFn(that, analyzer, data, sampleRate);
-      //guidetone
-      const freq = IdealAudioNode.getFreq(this.contour[0], this.sd, this.mean);
-      this.guideNode = audioContext.createOscillator();
-      this.guideNode.frequency.value = freq;
-      guideTime = IdealAudioNode.idealTime/2;
     } else if(this.type == 'trace') {
       intervalFn = this.getTraceFn(that, analyzer, data, sampleRate, new Date().getTime() );
-      //guidetone
-      const startFreq = IdealAudioNode.getFreq(this.contour[0], this.sd, this.mean);
-      const endFreq = IdealAudioNode.getFreq(this.contour[1], this.sd, this.mean);
-      this.guideNode = audioContext.createBufferSource();
-      var buffer = audioContext.createBuffer(1, sampleRate * IdealAudioNode.idealTime/1000, sampleRate);
-      var bufferData = buffer.getChannelData(0);
-      IdealAudioNode.fillContourArray(bufferData, sampleRate, startFreq, endFreq);
-      this.guideNode.buffer = buffer;
-      guideTime = IdealAudioNode.idealTime;
     }
+    var timeMult = this.type == 'line'?0.5:1;
+    // define guidetone
+    const startFreq = IdealAudioNode.getFreq(this.contour[0], this.sd, this.mean);
+    const endFreq = IdealAudioNode.getFreq(this.contour[1], this.sd, this.mean);
+    this.guideNode = audioContext.createBufferSource();
+    var buffer = audioContext.createBuffer(1, timeMult * sampleRate * IdealAudioNode.idealTime/1000, sampleRate);
+    var bufferData = buffer.getChannelData(0);
+    IdealAudioNode.fillContourArray(bufferData, sampleRate, startFreq, endFreq);
+    this.guideNode.buffer = buffer;
+    // start guidetone
+    guideTime = timeMult * IdealAudioNode.idealTime;
     this.guideNode.start();
     this.guideNode.connect(audioContext.destination);
 
@@ -193,14 +191,17 @@ class IdealAudioNode {
     return(Math.pow(2,(st - 49)/12) * 440);
   }
 
+  //taper in and out over 0.1s
   //does linear interpolation (in log space!)
   static fillContourArray(array, sampleRate, startFreq, endFreq) {
+    const taperLength = 0.1
     const len = array.length;
     var phase = 0;
     for(var i = 0; i < len; i++) {
       const freq = Math.exp(((len - i)/len) * Math.log(startFreq) + (i/len) * Math.log(endFreq));
       phase += 2 * Math.PI * freq / sampleRate;
-      array[i] = Math.sin(phase);
+      const amplitude = Math.min(Math.min(1,i/(taperLength*sampleRate)),(len - i)/(taperLength*sampleRate));
+      array[i] = amplitude * Math.sin(phase);
     }
   }
  
