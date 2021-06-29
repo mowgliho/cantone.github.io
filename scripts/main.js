@@ -10,10 +10,15 @@ window.onload = function() {
 
   //production initialization
   let producer = new Producer(document, startAudio, cache);
+
+  //listener initialization
   let listener = new Listener(document);
 
+  //uploader initialization
+  let uploader = new Uploader(document, startAudio)
+
   //mode switcher
-  initializeModeSwitcher(document, calibrator, producer, listener);
+  initializeModeSwitcher(document, calibrator, producer, listener, uploader);
 
   // monkeypatch Web Audio
   window.AudioContext = window.AudioContext || window.webkitAudioContext;

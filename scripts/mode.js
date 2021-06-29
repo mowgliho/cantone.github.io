@@ -1,9 +1,10 @@
-function initializeModeSwitcher(document, calibrator, producer, listener) {
-  let modes = ['calib','produce','listen'];
+function initializeModeSwitcher(document, calibrator, producer, listener, uploader) {
+  let modes = ['calib','produce','listen','upload'];
   let data = {
     calib: {cl: calibrator},
     produce: {cl:producer},
-    listen: {cl:listener}
+    listen: {cl:listener},
+    upload: {cl:uploader},
   };
 
   activateMode = function(m) {
