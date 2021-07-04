@@ -20,7 +20,7 @@ class Listener {
       mono: new MonoListener(document),
       wang: new WangListener(document),
       match: new MatchListener(document),
-      phrase: null
+      phrase: new PhraseListener(document)
     }
 
     this.divs = {}
