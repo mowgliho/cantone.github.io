@@ -25,8 +25,7 @@ class PhraseListener {
 
 
   //state
-  chooseState;
-  listenState;
+  state;
   text;
 
   constructor(document) {
@@ -48,24 +47,22 @@ class PhraseListener {
     this.buildListenDiv(document, this.listenDiv); 
     div.appendChild(this.listenDiv);
 
-    this.chooseState = 'choose';
-    this.listenState = null;
+    this.state = 'choose';
     this.update();
   }
 
   update() {
     const that = this;
-    if(this.chooseState == 'choose') {
+    if(this.state == 'choose') {
       this.chooseDiv.style.display = 'block';
       this.showChoiceDiv.style.display = 'none';
-    } else if(this.chooseState == 'hide') {
-      this.chooseDiv.style.display = 'none';
-      this.showChoiceDiv.style.display = 'block';
+      this.listenDiv.style.display = 'none';
+      return;
     }
-    if(this.listenState == null || !Object.keys(Phrases.data).includes(this.text)) {
-      this.listenDiv.style.visibility = 'hidden';
-    } else if(this.listenState == 'start') {
-      console.log(this.text);
+    this.chooseDiv.style.display = 'none';
+    this.showChoiceDiv.style.display = 'block';
+    this.listenDiv.style.display = 'block';
+    if(this.state == 'start') {
       this.playDiv.innerHTML = "";
       var i = 0;
       for(const [db,files] of Object.entries(Phrases.data[this.text]['files'])) {
@@ -91,7 +88,7 @@ class PhraseListener {
       this.referenceDiv.style.visibility = 'hidden';
       this.jyutpingField.innerHTML = '';
       this.transField.innerHTML = '';
-    } else if(this.listenState == 'guessed') {
+    } else if(this.state == 'guessed') {
       this.guessButton.style.visibility = 'hidden';
       this.listenDiv.style.visibility = 'visible';
       this.answerDiv.style.visibility = 'visible';
@@ -118,8 +115,8 @@ class PhraseListener {
   }
 
   guess(value) {
-    if(this.listenState != 'start') return;
-    this.listenState = 'guessed';
+    if(this.state != 'start') return;
+    this.state = 'guessed';
     this.updateAnswerDiv(value);
     this.update();
   }
@@ -145,9 +142,8 @@ class PhraseListener {
   }
 
   newText(text) {
-    this.chooseState = 'hide';
+    this.state = 'start';
     this.text = text;
-    this.listenState = 'start';
     this.update();
   }
 
@@ -204,7 +200,7 @@ class PhraseListener {
 
     const button = document.createElement('button');
     button.innerHTML = 'Choose new phrase/word';
-    button.onclick = function() {that.chooseState = 'choose'; that.update()}
+    button.onclick = function() {that.state = 'choose'; that.update()}
     div.appendChild(button);
   }
 
