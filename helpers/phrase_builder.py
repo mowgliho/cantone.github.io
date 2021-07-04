@@ -16,6 +16,7 @@ import csv
 import json
 import shutil
 import pathlib
+import subprocess
 
 if len(sys.argv) != 5:
   print('usage: [input_dir] [output_fn] [phrase_dir] [prefix]')
@@ -55,7 +56,7 @@ for fol in os.listdir(input_dir):
       data[word]['files'][fol] = []
     new_fn = fol + '_' + row['filename']
     data[word]['files'][fol].append(os.path.join(phrase_dir,new_fn))
-    shutil.copyfile(os.path.join(wav_folder, row['filename']), os.path.join(phrase_dir,new_fn))
+    subprocess.run(['sox',os.path.join(wav_folder, row['filename']), '-r','8000','-b','16',os.path.join(phrase_dir,new_fn)])#reduce samplerate to 8k (telephony speech)
 
 with open(output_fn, 'w', encoding='utf8') as f:
   f.write('class Phrases {\n  static data = ')#start of file
