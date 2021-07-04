@@ -3,6 +3,9 @@ class Phrases {
     "一": {
       "num_pron": 5,
       "num_char": 1,
+      "tones": "1",
+      "jyutping": "jat1",
+      "translation": "one",
       "files": {
         "forvo": [
           "wav/phrase/forvo_一_bananaman_1415536.wav",
@@ -16,6 +19,9 @@ class Phrases {
     "三": {
       "num_pron": 3,
       "num_char": 1,
+      "tones": "1",
+      "jyutping": "saam1",
+      "translation": "3",
       "files": {
         "forvo": [
           "wav/phrase/forvo_三_bananaman_1415549.wav",
@@ -27,6 +33,9 @@ class Phrases {
     "上海": {
       "num_pron": 5,
       "num_char": 2,
+      "tones": "62",
+      "jyutping": "soeng6hoi2",
+      "translation": "Shanghai",
       "files": {
         "forvo": [
           "wav/phrase/forvo_上海_claraclara_5177811.wav",
@@ -40,6 +49,9 @@ class Phrases {
     "中國": {
       "num_pron": 5,
       "num_char": 2,
+      "tones": "13",
+      "jyutping": "zung1gwok3",
+      "translation": "China",
       "files": {
         "forvo": [
           "wav/phrase/forvo_中國_chloefeng_3450278.wav",
@@ -53,6 +65,9 @@ class Phrases {
     "中華人民共和國": {
       "num_pron": 4,
       "num_char": 7,
+      "tones": "1444643 P' R  C",
+      "jyutping": "zung1waa4jan4man4gung6wo4gwok3 People's Republic of China",
+      "translation": "NA",
       "files": {
         "forvo": [
           "wav/phrase/forvo_中華人民共和國_KraleHiu88_7527008.wav",
@@ -65,6 +80,9 @@ class Phrases {
     "九龍": {
       "num_pron": 4,
       "num_char": 2,
+      "tones": "24",
+      "jyutping": "gau2lung4",
+      "translation": "Kowloon",
       "files": {
         "forvo": [
           "wav/phrase/forvo_九龍_btnor_1811094.wav",
@@ -77,6 +95,9 @@ class Phrases {
     "五": {
       "num_pron": 3,
       "num_char": 1,
+      "tones": "5",
+      "jyutping": "ng5",
+      "translation": "5",
       "files": {
         "forvo": [
           "wav/phrase/forvo_五_ankeycheng_686493.wav",
@@ -88,6 +109,9 @@ class Phrases {
     "但係": {
       "num_pron": 1,
       "num_char": 2,
+      "tones": "66 ",
+      "jyutping": "daan6hai6 but",
+      "translation": "NA",
       "files": {
         "forvo": [
           "wav/phrase/forvo_但係_vivi0_838306.wav"
@@ -97,6 +121,9 @@ class Phrases {
     "佐敦": {
       "num_pron": 3,
       "num_char": 2,
+      "tones": "21",
+      "jyutping": "zo2deon1",
+      "translation": "Jordan (MTR stop in Hong Kong)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_佐敦_Capri_945447.wav",
@@ -108,6 +135,9 @@ class Phrases {
     "你好": {
       "num_pron": 5,
       "num_char": 2,
+      "tones": "52",
+      "jyutping": "nei5hou2",
+      "translation": "hello",
       "files": {
         "forvo": [
           "wav/phrase/forvo_你好_1662817089_6151238.wav",
@@ -121,6 +151,9 @@ class Phrases {
     "你好嗎": {
       "num_pron": 4,
       "num_char": 3,
+      "tones": "523",
+      "jyutping": "nei5hou2maa3",
+      "translation": "How are you?",
       "files": {
         "forvo": [
           "wav/phrase/forvo_你好嗎_daudau_4379400.wav",
@@ -133,6 +166,9 @@ class Phrases {
     "佢": {
       "num_pron": 3,
       "num_char": 1,
+      "tones": "5",
+      "jyutping": "keoi5",
+      "translation": "he/she/it",
       "files": {
         "forvo": [
           "wav/phrase/forvo_佢_feudgen_816619.wav",
@@ -144,6 +180,9 @@ class Phrases {
     "傾偈": {
       "num_pron": 3,
       "num_char": 2,
+      "tones": "12",
+      "jyutping": "king1gai2",
+      "translation": "talk/have a conversation",
       "files": {
         "forvo": [
           "wav/phrase/forvo_傾偈_bananaman_1408994.wav",
@@ -155,6 +194,9 @@ class Phrases {
     "入實驗室撳緊急掣": {
       "num_pron": 5,
       "num_char": 8,
+      "tones": "66616213",
+      "jyutping": "jap6sat6jim6sat1gam6gan2gap1zai3",
+      "translation": "(tongue twister: Enter the laboratory and press the emergency button)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_入實驗室撳緊急掣_feudgen_1074217.wav",
@@ -168,6 +210,9 @@ class Phrases {
     "入食物實驗室撳實十個緊急掣": {
       "num_pron": 3,
       "num_char": 13,
+      "tones": "6666616663213",
+      "jyutping": "jap6sik6mat6sat6jim6sat1gam6sat6sap6go3gan2gap1zai3",
+      "translation": "(tongue twister: Enter the food laboratory and press ten emergency buttons)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_入食物實驗室撳實十個緊急掣_dsooom_4279925.wav",
@@ -179,6 +224,9 @@ class Phrases {
     "六": {
       "num_pron": 2,
       "num_char": 1,
+      "tones": "6",
+      "jyutping": "luk6",
+      "translation": "6",
       "files": {
         "forvo": [
           "wav/phrase/forvo_六_bananaman_1415546.wav",
@@ -189,6 +237,9 @@ class Phrases {
     "冇": {
       "num_pron": 3,
       "num_char": 1,
+      "tones": "5",
+      "jyutping": "mou5",
+      "translation": "not have",
       "files": {
         "forvo": [
           "wav/phrase/forvo_冇_isomanatees_1466752.wav",
@@ -200,6 +251,9 @@ class Phrases {
     "冇問題": {
       "num_pron": 5,
       "num_char": 3,
+      "tones": "564",
+      "jyutping": "mou5man6tai4",
+      "translation": "no problem",
       "files": {
         "forvo": [
           "wav/phrase/forvo_冇問題_1662817089_6151227.wav",
@@ -213,6 +267,9 @@ class Phrases {
     "再見": {
       "num_pron": 6,
       "num_char": 2,
+      "tones": "33",
+      "jyutping": "zoi3gin3",
+      "translation": "bye-bye",
       "files": {
         "forvo": [
           "wav/phrase/forvo_再見_alexaround_3372734.wav",
@@ -227,6 +284,9 @@ class Phrases {
     "冰凍三尺，非一日之寒": {
       "num_pron": 4,
       "num_char": 10,
+      "tones": "1313，11614",
+      "jyutping": "bing1dung3saam1cek3，fei1jat1jat6zi1hon4",
+      "translation": "(idiom: Three feed of ice doesn't freeze in one day)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_冰凍三尺，非一日之寒_dsooom_4279874.wav",
@@ -239,6 +299,9 @@ class Phrases {
     "北京": {
       "num_pron": 2,
       "num_char": 2,
+      "tones": "11",
+      "jyutping": "bak1ging1",
+      "translation": "Beijing",
       "files": {
         "forvo": [
           "wav/phrase/forvo_北京_btnor_1811151.wav",
@@ -249,6 +312,9 @@ class Phrases {
     "南京": {
       "num_pron": 2,
       "num_char": 2,
+      "tones": "41",
+      "jyutping": "naam4ging1",
+      "translation": "Nanjing",
       "files": {
         "forvo": [
           "wav/phrase/forvo_南京_KaWaiChan_898381.wav",
@@ -259,6 +325,9 @@ class Phrases {
     "即係": {
       "num_pron": 2,
       "num_char": 2,
+      "tones": "16",
+      "jyutping": "zik1hai6",
+      "translation": "exactly, that is to say",
       "files": {
         "forvo": [
           "wav/phrase/forvo_即係_AlanD_2030270.wav",
@@ -269,6 +338,9 @@ class Phrases {
     "去": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "3",
+      "jyutping": "heoi3",
+      "translation": "go",
       "files": {
         "forvo": [
           "wav/phrase/forvo_去_bianca_ip_7717240.wav"
@@ -278,6 +350,9 @@ class Phrases {
     "台北": {
       "num_pron": 4,
       "num_char": 2,
+      "tones": "41",
+      "jyutping": "toi4bak1",
+      "translation": "Taipei",
       "files": {
         "forvo": [
           "wav/phrase/forvo_台北_heidaaan_573215.wav",
@@ -290,6 +365,9 @@ class Phrases {
     "咗": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "2",
+      "jyutping": "zo2",
+      "translation": "past tense participle",
       "files": {
         "forvo": [
           "wav/phrase/forvo_咗_crystalgachasongs_7508763.wav"
@@ -299,6 +377,9 @@ class Phrases {
     "唔該": {
       "num_pron": 5,
       "num_char": 2,
+      "tones": "41",
+      "jyutping": "m4goi1",
+      "translation": "Thank you",
       "files": {
         "forvo": [
           "wav/phrase/forvo_唔該_cuichungman_6426312.wav",
@@ -312,6 +393,9 @@ class Phrases {
     "啲": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "1",
+      "jyutping": "di1",
+      "translation": "(particle)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_啲_daudau_4688017.wav"
@@ -321,6 +405,9 @@ class Phrases {
     "喇": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "1",
+      "jyutping": "laa1",
+      "translation": "(particle)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_喇_cuichungman_1887409.wav"
@@ -330,6 +417,9 @@ class Phrases {
     "喎": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "3 ()",
+      "jyutping": "wo3 (particle)",
+      "translation": "NA",
       "files": {
         "forvo": [
           "wav/phrase/forvo_喎_CPEG_935460.wav"
@@ -339,6 +429,9 @@ class Phrases {
     "噉": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "2",
+      "jyutping": "gam2",
+      "translation": "this/that way",
       "files": {
         "forvo": [
           "wav/phrase/forvo_噉_Canton_2403207.wav"
@@ -348,6 +441,9 @@ class Phrases {
     "噉樣": {
       "num_pron": 1,
       "num_char": 2,
+      "tones": "22",
+      "jyutping": "gam2joeng2",
+      "translation": "this way, that way",
       "files": {
         "forvo": [
           "wav/phrase/forvo_噉樣_AlanD_5144677.wav"
@@ -357,6 +453,9 @@ class Phrases {
     "廣州": {
       "num_pron": 5,
       "num_char": 2,
+      "tones": "21",
+      "jyutping": "gwong2zau1",
+      "translation": "Guangzhou",
       "files": {
         "forvo": [
           "wav/phrase/forvo_廣州_annarafter_4124667.wav",
@@ -370,6 +469,9 @@ class Phrases {
     "廣東話": {
       "num_pron": 4,
       "num_char": 3,
+      "tones": "212",
+      "jyutping": "gwong2dung1waa2",
+      "translation": "Cantonese",
       "files": {
         "forvo": [
           "wav/phrase/forvo_廣東話_chankwunmei_5507287.wav",
@@ -382,6 +484,9 @@ class Phrases {
     "恭喜發財": {
       "num_pron": 30,
       "num_char": 4,
+      "tones": "1234",
+      "jyutping": "gung1hei2faat3coi4",
+      "translation": "Congratulations on happiness and prosperity",
       "files": {
         "forvo": [
           "wav/phrase/forvo_恭喜發財_btnor_3250936.wav",
@@ -422,6 +527,9 @@ class Phrases {
     "我": {
       "num_pron": 1,
       "num_char": 1,
+      "tones": "5",
+      "jyutping": "ngo5",
+      "translation": "I",
       "files": {
         "forvo": [
           "wav/phrase/forvo_我_cristynhoh605_7556225.wav"
@@ -431,6 +539,9 @@ class Phrases {
     "我愛你": {
       "num_pron": 4,
       "num_char": 3,
+      "tones": "535 I  ",
+      "jyutping": "ngo5oi3nei5 I love you",
+      "translation": "NA",
       "files": {
         "forvo": [
           "wav/phrase/forvo_我愛你_jasemty_270057.wav",
@@ -443,6 +554,9 @@ class Phrases {
     "香港": {
       "num_pron": 5,
       "num_char": 2,
+      "tones": "12",
+      "jyutping": "hoeng1gong2",
+      "translation": "Hong Kong",
       "files": {
         "forvo": [
           "wav/phrase/forvo_香港_btnor_3253856.wav",
@@ -456,6 +570,9 @@ class Phrases {
     "天天向上": {
       "num_pron": 23,
       "num_char": 4,
+      "tones": "1136",
+      "jyutping": "tin1tin1hoeng3soeng6",
+      "translation": "Upwards and onwards every day",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19A_15.wav",
@@ -487,6 +604,9 @@ class Phrases {
     "大吉大利": {
       "num_pron": 20,
       "num_char": 4,
+      "tones": "6166",
+      "jyutping": "daai6gat1daai6lei6",
+      "translation": "Much luck and much prosperity",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19A_19.wav",
@@ -515,6 +635,9 @@ class Phrases {
     "出入平安": {
       "num_pron": 17,
       "num_char": 4,
+      "tones": "1641",
+      "jyutping": "cut1yap6ping4on1",
+      "translation": "Leave and enter in safety",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19A_7.wav",
@@ -540,6 +663,9 @@ class Phrases {
     "學業進步": {
       "num_pron": 21,
       "num_char": 4,
+      "tones": "6636",
+      "jyutping": "hok6yip6zeon3bou6",
+      "translation": "Progress in your education",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_10.wav",
@@ -569,6 +695,9 @@ class Phrases {
     "年年有餘": {
       "num_pron": 24,
       "num_char": 4,
+      "tones": "4454",
+      "jyutping": "lin4lin4yau5yue4",
+      "translation": "Excess in each year",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_11.wav",
@@ -601,6 +730,9 @@ class Phrases {
     "心想事成": {
       "num_pron": 22,
       "num_char": 4,
+      "tones": "1264",
+      "jyutping": "sam1soeng2si6sing4",
+      "translation": "Accomplish that which is in your heart",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_13.wav",
@@ -631,6 +763,9 @@ class Phrases {
     "生意興隆": {
       "num_pron": 20,
       "num_char": 4,
+      "tones": "1314",
+      "jyutping": "saang1yi3hing1lung4",
+      "translation": "Have a prosperous business",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_14.wav",
@@ -659,6 +794,9 @@ class Phrases {
     "萬事如意": {
       "num_pron": 17,
       "num_char": 4,
+      "tones": "6643",
+      "jyutping": "maan6si6yu4yi3",
+      "translation": "A thousand things according to your will",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_15.wav",
@@ -684,6 +822,9 @@ class Phrases {
     "笑口常開": {
       "num_pron": 17,
       "num_char": 4,
+      "tones": "3241",
+      "jyutping": "siu3hau2soeng4hoi1",
+      "translation": "Laugh with an open mouth frequently",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_17.wav",
@@ -709,6 +850,9 @@ class Phrases {
     "五福臨門": {
       "num_pron": 15,
       "num_char": 4,
+      "tones": "5144",
+      "jyutping": "mm5fuk1lam4mun4",
+      "translation": "Five blessings for your household",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_19.wav",
@@ -732,6 +876,9 @@ class Phrases {
     "招財進寶": {
       "num_pron": 16,
       "num_char": 4,
+      "tones": "1432",
+      "jyutping": "ziu1coi4zeon3bou2",
+      "translation": "Seek wealth welcome in the precious",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_20.wav",
@@ -756,6 +903,9 @@ class Phrases {
     "新年快樂": {
       "num_pron": 19,
       "num_char": 4,
+      "tones": "1436",
+      "jyutping": "san1lin4faai3lok6",
+      "translation": "Happy New Year",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_4.wav",
@@ -783,6 +933,9 @@ class Phrases {
     "身體健康": {
       "num_pron": 27,
       "num_char": 4,
+      "tones": "1261",
+      "jyutping": "san1tai2gin6hong1",
+      "translation": "May your health be well",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_6.wav",
@@ -818,6 +971,9 @@ class Phrases {
     "快高長大": {
       "num_pron": 27,
       "num_char": 4,
+      "tones": "3126",
+      "jyutping": "faai3gou1zoeng2dai6",
+      "translation": "Grow quickly",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_7.wav",
@@ -853,6 +1009,9 @@ class Phrases {
     "龍馬精神": {
       "num_pron": 24,
       "num_char": 4,
+      "tones": "4514",
+      "jyutping": "lung4ma5zing1san4",
+      "translation": "Have the spirit of the horse and dragon",
       "files": {
         "spice": [
           "wav/phrase/spice_VF19B_8.wav",
