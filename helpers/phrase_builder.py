@@ -1,3 +1,4 @@
+# python helpers/phrase_builder.py ../slp_diss/data/phrases/ resources/phrase_list.js wav/phrase wav/phrase
 #reads a directory/directories for audio files, creates an appropriate js file with information about relevant audio files:
 # assumes that the input folder has folders. Each folder is a data source. In that folder should be a js_files.tsv, saying where things should go. There should also be a 'clean', which points to the files
 # js file will look like:
@@ -50,7 +51,14 @@ for fol in os.listdir(input_dir):
   for row in rows:
     word = row['text']
     if word not in data:
-      data[word] = {'num_pron': 0, 'num_char': len(word), 'files': {}}
+      data[word] = {
+        'num_pron': 0, 
+        'num_char': len(word), 
+        'tones': re.sub('[a-z]','',row['jyutping']),
+        'jyutping': row['jyutping'], 
+        'translation': row['translation'], 
+        'files': {}
+      }
     data[word]['num_pron'] += 1
     if fol not in data[word]['files']:
       data[word]['files'][fol] = []
