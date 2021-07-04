@@ -65,9 +65,9 @@ class Phrases {
     "中華人民共和國": {
       "num_pron": 4,
       "num_char": 7,
-      "tones": "1444643 P' R  C",
-      "jyutping": "zung1waa4jan4man4gung6wo4gwok3 People's Republic of China",
-      "translation": "NA",
+      "tones": "1444643",
+      "jyutping": "zung1waa4jan4man4gung6wo4gwok3",
+      "translation": "People's Republic of China",
       "files": {
         "forvo": [
           "wav/phrase/forvo_中華人民共和國_KraleHiu88_7527008.wav",
@@ -109,9 +109,9 @@ class Phrases {
     "但係": {
       "num_pron": 1,
       "num_char": 2,
-      "tones": "66 ",
-      "jyutping": "daan6hai6 but",
-      "translation": "NA",
+      "tones": "66",
+      "jyutping": "daan6hai6",
+      "translation": "but",
       "files": {
         "forvo": [
           "wav/phrase/forvo_但係_vivi0_838306.wav"
@@ -417,9 +417,9 @@ class Phrases {
     "喎": {
       "num_pron": 1,
       "num_char": 1,
-      "tones": "3 ()",
-      "jyutping": "wo3 (particle)",
-      "translation": "NA",
+      "tones": "3",
+      "jyutping": "wo3",
+      "translation": "(particle)",
       "files": {
         "forvo": [
           "wav/phrase/forvo_喎_CPEG_935460.wav"
@@ -539,9 +539,9 @@ class Phrases {
     "我愛你": {
       "num_pron": 4,
       "num_char": 3,
-      "tones": "535 I  ",
-      "jyutping": "ngo5oi3nei5 I love you",
-      "translation": "NA",
+      "tones": "535",
+      "jyutping": "ngo5oi3nei5",
+      "translation": "I love you",
       "files": {
         "forvo": [
           "wav/phrase/forvo_我愛你_jasemty_270057.wav",

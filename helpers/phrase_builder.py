@@ -59,6 +59,8 @@ for fol in os.listdir(input_dir):
         'translation': row['translation'], 
         'files': {}
       }
+      if row['translation'] == 'NA':
+        print('NA Translation', row)
     data[word]['num_pron'] += 1
     if fol not in data[word]['files']:
       data[word]['files'][fol] = []
