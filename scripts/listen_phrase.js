@@ -77,7 +77,6 @@ class PhraseListener {
             audio.play();
           };
           this.playDiv.appendChild(button);
-          console.log(fn);
           i += 1;
         }
       }
