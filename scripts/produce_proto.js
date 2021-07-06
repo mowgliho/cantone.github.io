@@ -2,14 +2,49 @@ class ProtoProducer {
   static ANY = 'any';
   pickDiv;
   selectors;
+  syllableLabel;
+  newDiv;
+  trainDiv;
 
   //state
+  //[pick, show]
   state;
+  playState;
+
+  //cached stuff
+  mean;
+  sd;
 
   constructor(document, startAudio, div) {
     this.selectors = {};
     this.pickDiv = this.buildPicker(document, div);
+    this.newDiv = this.buildNew(document, div);
+    div.appendChild(document.createElement('hr'));
+    this.trainDiv = this.buildTrainer(document,div);
     this.updateOptions();
+    this.playState = 'none';
+    this.pickNew();
+  }
+
+  buildNew(document,div) {
+    const that = this;
+
+    const newDiv = document.createElement('div');
+    var label = document.createElement('label');
+    label.innerHTML = 'Current Syllable is ';
+    newDiv.appendChild(label);
+    this.syllableLabel = document.createElement('label');
+    this.syllableLabel.style.color = 'green';
+    newDiv.appendChild(this.syllableLabel);
+    label = document.createElement('label');
+    label.innerHTML = ': ';
+    newDiv.appendChild(label);
+    const button = document.createElement('button');
+    button.innerHTML = 'Pick new syllable';
+    button.onclick = function() {that.pickNew()};
+    newDiv.appendChild(button);
+    div.appendChild(newDiv);
+    return(newDiv);
   }
 
   buildPicker(document, div) {
@@ -56,6 +91,30 @@ class ProtoProducer {
     selector.onchange = function() { that.updateOptions()};
     div.appendChild(selector);
     return(selector);
+  }
+
+  buildTrainer(document, div) {
+    const that = this;
+    const trainerDiv = document.createElement('div');
+    var label = document.createElement('label');
+    label.innerHTML = 'Exemplar for this syllable: '
+    trainerDiv.appendChild(label);
+    const exButton = document.createElement('button');
+    exButton.innerHTML = 'Play!';
+    exButton.onclick = function() {that.playExemplar(exButton);};
+    trainerDiv.appendChild(exButton);
+    div.appendChild(trainerDiv);
+    return(trainerDiv);
+  }
+
+  playExemplar(button) {
+    const that = this;
+    if(this.playState == 'playing' || !(Object.keys(Chars.data).includes(this.char))) return;
+    this.playState = 'playing'
+    var audio = new Audio(Chars.data[this.char]['filename']);
+    button.style.backgroundColor = 'LawnGreen';
+    audio.onended = function() { that.playState = 'none';button.style.backgroundColor = '';};
+    audio.play();
   }
 
   addOption(document, selector, optText, optValue) {
@@ -107,12 +166,31 @@ class ProtoProducer {
     }
     let items = Array.from(pos);
     this.char = items[Math.floor(Math.random() * items.length)];
-    console.log(this.char);
-    //this.state = blah etc.
-    this.update();
+    this.syllableLabel.innerHTML = this.char;
+    this.state = 'show';
+    this.innerUpdate();
+  }
+
+  pickNew() {
+    this.state = 'pick';
+    this.innerUpdate();
+  }
+
+  innerUpdate() {
+    if(this.state == 'pick') {
+      this.pickDiv.style.display = 'block';
+      this.newDiv.style.display = 'none';
+      this.trainDiv.style.display = 'none';
+    } else if(this.state == 'show') {
+      this.pickDiv.style.display = 'none';
+      this.newDiv.style.display = 'block';
+      this.trainDiv.style.display = 'block';
+    }
   }
 
   update(mean, sd) {
-    console.log('updating', mean, sd);
+    this.mean = mean;
+    this.sd = sd;
+    this.innerUpdate();
   }
 }
