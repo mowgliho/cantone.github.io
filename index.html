@@ -12,6 +12,7 @@
     <!-- https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js -->
     <script src="resources/recorder.js"></script>
     <script src="resources/phrase_list.js" charset='utf-8'></script>
+    <script src="resources/char_list.js" charset='utf-8'></script>
     <!-- setup -->
     <script src="scripts/config.js"></script>
     <script src="scripts/mode.js"></script>
@@ -19,6 +20,7 @@
     <!-- components -->
     <script src="scripts/calib.js"></script>
     <script src="scripts/produce_ideal.js"></script>
+    <script src="scripts/produce_proto.js"></script>
     <script src="scripts/produce.js"></script>
     <script src="scripts/listen_mono.js"></script>
     <script src="scripts/listen_match.js"></script>
@@ -56,8 +58,7 @@
       <div id="div-produce-train">
         <div id="div-produce-mode">
           <button id="produce-mode-ideal">Idealized</button>
-          <button id="produce-mode-data">Data-Driven</button>
-          <button id="produce-mode-ta">Target Approximation</button>
+          <button id="produce-mode-proto">Prototype</button>
         </div>
         <hr>
         <div id="div-produce-ideal" style="display:none;">
@@ -77,8 +78,7 @@
             </div>
           </div>
         </div>
-        <div id="div-produce-data" style="display:none;"></div>
-        <div id="div-produce-ta" style="display:none;"></div>
+        <div id="div-produce-proto" style="display:none;"></div>
       </div>
     </div>
 

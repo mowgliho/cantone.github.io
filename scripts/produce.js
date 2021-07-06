@@ -1,6 +1,6 @@
 class Producer {
   //modes
-  modes = [null,'ideal','data','ta'];
+  modes = ['ideal','proto'];
   producers;
 
   //divs
@@ -24,10 +24,8 @@ class Producer {
 
 
     this.producers = {
-      null: null,
       ideal: new IdealProducer(document, startAudio),
-      data: null,
-      ta: null
+      proto: new ProtoProducer(document, startAudio, document.getElementById('div-produce-proto'))
     }
 
     //connect up all modes to functionality
