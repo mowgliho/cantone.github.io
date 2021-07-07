@@ -1,4 +1,6 @@
 class ProduceTrainer {
+  static smoothLength = 5;
+  static smoothThreshold = 10;
   height = 20;//number of sts tall the canvas is, with 0/mean in the middle.
   static band = 0.05;
   adjustedDuration = 0.7;
@@ -103,14 +105,6 @@ class ProduceTrainer {
     const buttonFn = button.onclick;
     button.style.backgroundColor = ProduceTrainer.playColor
     button.innerHTML = 'click to stop';
-    const stopMatching = function() {
-      button.style.backgroundColor = ProduceTrainer.stoppedColor;
-      that.stop();
-      button.onclick = buttonFn;
-      turnLabel.style.visibility = 'hidden';
-    }
-    button.onclick = stopMatching;
-
     let that = this;
 
     //setup recording/analyzing
@@ -122,11 +116,13 @@ class ProduceTrainer {
     const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
     const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-that.mean)/that.height));
 
+    const smoother = ProduceTrainer.getSmoother(ProduceTrainer.smoothLength, ProduceTrainer.smoothThreshold);
     const intervalFn = function() {
       analyzer.getFloatTimeDomainData(data);
       const st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
       const val = Math.max(0, Math.min(1, 0.5 + (st-that.mean)/that.height));
-      ProduceTrainer.drawLine(canvas, targetY, val);
+      const smoothedVal = smoother(val);
+      ProduceTrainer.drawLine(canvas, targetY, smoothedVal);
     }
 
     // define guidetone
@@ -134,6 +130,17 @@ class ProduceTrainer {
     const gainNode = audioContext.createGain();
     gainNode.gain.value = 1.3;
     audioNode.connect(gainNode).connect(audioContext.destination);
+
+    const stopMatching = function() {
+      button.style.backgroundColor = ProduceTrainer.stoppedColor;
+      that.stop();
+      button.onclick = buttonFn;
+      button.innerHTML = type;
+      turnLabel.style.visibility = 'hidden';
+      audioNode.stop();
+    }
+    button.onclick = stopMatching;
+
     audioNode.start();
 
     this.timeouts.push(setTimeout(function() { turnLabel.style.visibility = 'visible'; that.timeouts.push(setInterval(intervalFn, this.measurementInterval))}, this.guideToneDuration*1000));
@@ -146,10 +153,32 @@ class ProduceTrainer {
     ctx.beginPath();
   }
 
+  //if zero, only add to the array if had more than zeroThreshold in a row
+  static getSmoother = (size, zeroThreshold) => {
+    var idx = 0;
+    var active = false;
+    const array = new Array(size);
+    var zeroCount = 0;
+
+    return(function(val) {
+      if(val == 0) zeroCount += 1;
+      else zeroCount = 0;
+
+      if(val != 0 || zeroCount > zeroThreshold) {
+        array[idx] = val;
+        idx = (idx + 1) % size;
+        if(idx == 0) active = true;
+      }
+      if(!active) return(null);
+      return(array.reduce((a,b) => a + b)/size);
+    });
+  }
+
   //start, end are floats between 0 and 1, and go UP
   static drawLine(canvas, contour, redLine) {
     ProduceTrainer.clearCanvas(canvas);
     let ctx = canvas.getContext('2d');
+    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(0,(1-contour)*canvas.height);
     ctx.lineTo(canvas.width, (1-contour)*canvas.height);
