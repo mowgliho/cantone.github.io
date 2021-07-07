@@ -1,3 +1,4 @@
+//TODO replace setInterval with requestAnimationFrame
 class ProduceTrainer {
   static smoothLength = 5;
   static smoothThreshold = 10;
@@ -9,7 +10,10 @@ class ProduceTrainer {
   adjustedDuration = 0.7;
   tuneDuration = 8;
   guideToneDuration = 2;
+  maxTryDuration = 3;
   measurementInterval = 25;
+  tryDBCutoff = Math.log2(0.01);
+  tryDetectThreshold = 10;
   canvases;
   static playColor = 'LawnGreen';
   static stoppedColor = '';
@@ -57,7 +61,7 @@ class ProduceTrainer {
     const tryButton = document.createElement('button');
     tryButton.style.width = '100%';
     tryButton.innerHTML = 'Try It!';
-    //TODO button.onclick = blah
+    tryButton.onclick = startAudio(function(audioContext,stream) {that.try(audioContext,stream,tryButton,that.tryCanvas)});
     div.appendChild(tryButton);
     const listenButton = document.createElement('button');
     listenButton.style.width = '100%';
@@ -139,6 +143,81 @@ class ProduceTrainer {
 
   checkState() {
     return(this.playState != 'playing' && Object.keys(Chars.data).includes(this.char));
+  }
+
+  try(audioContext,stream,button,canvas) {
+    const that = this;
+
+    if(!this.checkState()) return;
+    this.playState = 'playing';
+    const buttonFn = button.onclick;
+    button.style.backgroundColor = ProduceTrainer.playColor;
+    button.onclick = function() {};
+
+    const analyzer = audioContext.createAnalyser();
+    analyzer.fftsize = Math.pow(2,9);
+    const sampleRate = audioContext.sampleRate;
+    audioContext.createMediaStreamSource(stream).connect(analyzer);
+
+    const data = new Float32Array(analyzer.fftSize);
+
+    var idx = 0;
+    const maxMeasurements = Math.ceil(this.maxTryDuration*1000/this.measurementInterval)
+    const st = new Array(maxMeasurements);
+    const timestamps = new Array(maxMeasurements);
+    //detect if voice
+    var count = 0;
+    var on = false;
+
+    const stop = function() {
+      that.stop();
+      that.playState = 'none';
+      button.style.backgroundColor = ProduceTrainer.stoppedColor;
+      button.onclick = buttonFn;
+    }
+
+    const intervalFn = function() {
+      analyzer.getFloatTimeDomainData(data);
+      //store f0
+      st[idx] = 49 + 12*Math.log2(yin(data, sampleRate)/440);
+      timestamps[idx] = new Date().getTime();
+      //detect voice
+      const vol = Math.log2(Math.sqrt(data.reduce((a, x) => a + x**2)/data.length));
+      if(on == (vol < that.tryDBCutoff)) count += 1;
+      if(count > that.tryDetectThreshold) {
+        count = 0;
+        if(!on) {
+          on = true;
+        } else {
+          that.plotTry(st, timestamps);
+          stop();
+        }
+      }
+      idx += 1;
+    }
+
+    this.timeouts.push(setInterval(intervalFn, this.measurementInterval));
+    this.timeouts.push(setTimeout(function() {that.plotTry(st, timestamps); stop()}, this.maxTryDuration*1000));
+  }
+
+  plotTry(st, timestamps) {
+    const idxs = []
+    for(var i = 0; i < st.length; i++) {
+      if(0.5 + (st[i]-this.mean)/this.height > 0) idxs.push(i);
+      if(typeof st[i] == 'undefined') break;
+    }
+    const start = timestamps[idxs[0]];
+    const duration = timestamps[idxs[idxs.length - 1]] - start;
+    const contour = [];
+    for(var i of idxs) {
+      contour.push([(timestamps[i] - start)/duration,st[i]]);
+    }
+    const citationContour = this.audioProducer.getToneContour(this.tone,this.mean,this.sd);
+    const contours = [
+      {color:'black', contour: citationContour},
+      {color:'green', contour: contour}
+    ]
+    ProduceTrainer.drawContours(this.tryCanvas, contours, this.tryMargin,this.mean, this.height);
   }
 
   matchTone(audioContext, stream, type, button, canvas, turnLabel) {
@@ -285,24 +364,27 @@ class ProduceTrainer {
       ProduceTrainer.drawLine(canvas, targetY, null);
     }
     const contour = this.audioProducer.getToneContour(this.tone,this.mean,this.sd);
-    ProduceTrainer.drawContour(this.tryCanvas, contour, this.tryMargin,this.mean, this.height);
+    ProduceTrainer.drawContours(this.tryCanvas, [{'color': 'black', 'contour': contour}], this.tryMargin,this.mean, this.height);
   }
 
-  static drawContour(canvas, contour, margin, mean, height) {
+  static drawContours(canvas, contours, margin, mean, height) {
     ProduceTrainer.clearCanvas(canvas);
     const ctx = canvas.getContext('2d');
-    ctx.beginPath();
     if(canvas.width < 2*margin) {console.log('canvas too small for margins'); return;}
     ctx.lineWidth = 3;
-    ctx.strokeStyle = 'black';
-    for(var idx = 0; idx < contour.length; idx ++) {
-      const x = margin + contour[idx][0]*(canvas.width - 2*margin)
-      const y = canvas.height * (1-(0.5 + (contour[idx][1]-mean)/height))
-      if(idx == 0) {
-        ctx.moveTo(x,y);
-      } else {
-        ctx.lineTo(x,y);
-        ctx.stroke();
+    for(const contourInfo of contours) {
+      ctx.beginPath();
+      ctx.strokeStyle = contourInfo['color'];
+      const contour = contourInfo['contour'];
+      for(var idx = 0; idx < contour.length; idx ++) {
+        const x = margin + contour[idx][0]*(canvas.width - 2*margin)
+        const y = canvas.height * (1-(0.5 + (contour[idx][1]-mean)/height))
+        if(idx == 0) {
+          ctx.moveTo(x,y);
+        } else {
+          ctx.lineTo(x,y);
+          ctx.stroke();
+        }
       }
     }
   }
