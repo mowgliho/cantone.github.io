@@ -1,10 +1,15 @@
 class ProtoProducer {
+  audioProducer = ChaoAudioProducer;
+  adjustedDuration = 0.7;
+  static playColor = 'LawnGreen';
+  static stoppedColor = '';
   static ANY = 'any';
   pickDiv;
   selectors;
   syllableLabel;
   newDiv;
   trainDiv;
+  octaveLabel;
 
   //state
   //[pick, show]
@@ -20,7 +25,7 @@ class ProtoProducer {
     this.pickDiv = this.buildPicker(document, div);
     this.newDiv = this.buildNew(document, div);
     div.appendChild(document.createElement('hr'));
-    this.trainDiv = this.buildTrainer(document,div);
+    this.trainDiv = this.buildTrainer(document,div, startAudio);
     this.updateOptions();
     this.playState = 'none';
     this.pickNew();
@@ -93,16 +98,40 @@ class ProtoProducer {
     return(selector);
   }
 
-  buildTrainer(document, div) {
+  buildTrainer(document, div, startAudio) {
     const that = this;
     const trainerDiv = document.createElement('div');
+    //exemplar
+    const exemplarDiv = document.createElement('div');
     var label = document.createElement('label');
-    label.innerHTML = 'Exemplar for this syllable: '
-    trainerDiv.appendChild(label);
+    label.innerHTML = 'Example for this syllable: '
+    exemplarDiv.appendChild(label);
     const exButton = document.createElement('button');
     exButton.innerHTML = 'Play!';
     exButton.onclick = function() {that.playExemplar(exButton);};
-    trainerDiv.appendChild(exButton);
+    exemplarDiv.appendChild(exButton);
+    trainerDiv.appendChild(exemplarDiv);
+    //adjusted For voice
+    const adjustedDiv = document.createElement('div');
+    label = document.createElement('label');
+    label.innerHTML = 'Adjusted for your vocal range: '
+    adjustedDiv.appendChild(label);
+    this.octaveLabel = document.createElement('label');
+    this.octaveLabel.style.color = 'blue';
+    adjustedDiv.appendChild(this.octaveLabel);
+    //play button
+    const adjButton = document.createElement('button');
+    adjButton.innerHTML = 'Play!';
+    adjButton.onclick = startAudio(function(audioContext, stream) { that.playAdjusted(audioContext, adjButton, 1);});
+    adjustedDiv.appendChild(adjButton);
+    //play slow
+    const adjSlowButton = document.createElement('button');
+    adjSlowButton.innerHTML = 'Play Slower';
+    adjSlowButton.onclick = startAudio(function(audioContext, stream) { that.playAdjusted(audioContext, adjSlowButton, 0.5);});
+    adjustedDiv.appendChild(adjSlowButton);
+    //add to div
+    trainerDiv.appendChild(adjustedDiv);
+    //finish up
     div.appendChild(trainerDiv);
     return(trainerDiv);
   }
@@ -112,9 +141,31 @@ class ProtoProducer {
     if(this.playState == 'playing' || !(Object.keys(Chars.data).includes(this.char))) return;
     this.playState = 'playing'
     var audio = new Audio(Chars.data[this.char]['filename']);
-    button.style.backgroundColor = 'LawnGreen';
-    audio.onended = function() { that.playState = 'none';button.style.backgroundColor = '';};
+    button.style.backgroundColor = ProtoProducer.playColor
+    audio.onended = function() { that.playState = 'none';button.style.backgroundColor = ProtoProducer.stoppedColor;};
     audio.play();
+  }
+
+  playAdjusted(audioContext, button, speed) {
+    const that = this;
+    //ui stuff
+    if(this.playState == 'playing' || !(Object.keys(Chars.data).includes(this.char))) return;
+    this.playState = 'playing'
+    button.style.backgroundColor = ProtoProducer.playColor;
+    //play audio
+    const duration = this.adjustedDuration/speed;
+    const audioNode = this.audioProducer.adjustedTone(audioContext, this.char, this.tone, this.mean, this.sd, duration)
+    // start guidetone
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 1.3;
+    audioNode.connect(gainNode).connect(audioContext.destination);
+    audioNode.start();
+    audioNode.stop(duration*1000);
+    //ui stuff
+    audioNode.onended = function() {
+      that.playState = 'none';
+      button.style.backgroundColor = ProtoProducer.stoppedColor;
+    }
   }
 
   addOption(document, selector, optText, optValue) {
@@ -166,6 +217,7 @@ class ProtoProducer {
     }
     let items = Array.from(pos);
     this.char = items[Math.floor(Math.random() * items.length)];
+    this.tone = Chars.data[this.char]['tone'];
     this.syllableLabel.innerHTML = this.char;
     this.state = 'show';
     this.innerUpdate();
@@ -191,6 +243,12 @@ class ProtoProducer {
   update(mean, sd) {
     this.mean = mean;
     this.sd = sd;
+    var shift = this.audioProducer.shift(mean);
+    if(shift > 0) {
+      this.octaveLabel.innerHTML = '(shifted up ' + shift + ' octave' + (shift > 1?'s':'') + ' for audibility) ';
+    } else {
+      this.octaveLabel.innerHTML = '';
+    }
     this.innerUpdate();
   }
 }
