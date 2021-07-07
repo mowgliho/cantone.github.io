@@ -93,7 +93,6 @@ class ProduceTrainer {
   }
 
   matchTone(audioContext, stream, type, button, canvas) {
-    console.log('start');
     if(!this.checkState()) return;
     this.playState = 'playing';
     const buttonFn = button.onclick;
@@ -116,7 +115,6 @@ class ProduceTrainer {
     const data = new Float32Array(analyzer.fftSize)
     const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
     const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-that.mean)/that.height));
-    console.log(targetY, targetSt);
 
     const intervalFn = function() {
       analyzer.getFloatTimeDomainData(data);
