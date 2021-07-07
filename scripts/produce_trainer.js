@@ -72,8 +72,13 @@ class ProduceTrainer {
       const button = document.createElement('button');
       button.innerHTML = type;
       button.style.width = '100%';
-      button.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, button, canvas);});
       div.appendChild(button);
+      const turnLabel = document.createElement('label');
+      turnLabel.style.color = 'green';
+      turnLabel.innerHTML = 'Your Turn!';
+      turnLabel.style.visibility = 'hidden';
+      div.appendChild(turnLabel);
+      button.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, button, canvas, turnLabel);});
       graphDiv.appendChild(div);
       const span = document.createElement('span');
       span.style.width = '25px';
@@ -92,7 +97,7 @@ class ProduceTrainer {
     return(this.playState != 'playing' && Object.keys(Chars.data).includes(this.char));
   }
 
-  matchTone(audioContext, stream, type, button, canvas) {
+  matchTone(audioContext, stream, type, button, canvas, turnLabel) {
     if(!this.checkState()) return;
     this.playState = 'playing';
     const buttonFn = button.onclick;
@@ -102,6 +107,7 @@ class ProduceTrainer {
       button.style.backgroundColor = ProduceTrainer.stoppedColor;
       that.stop();
       button.onclick = buttonFn;
+      turnLabel.style.visibility = 'hidden';
     }
     button.onclick = stopMatching;
 
@@ -130,7 +136,7 @@ class ProduceTrainer {
     audioNode.connect(gainNode).connect(audioContext.destination);
     audioNode.start();
 
-    this.timeouts.push(setTimeout(function() { that.timeouts.push(setInterval(intervalFn, this.measurementInterval))}, this.guideToneDuration*1000));
+    this.timeouts.push(setTimeout(function() { turnLabel.style.visibility = 'visible'; that.timeouts.push(setInterval(intervalFn, this.measurementInterval))}, this.guideToneDuration*1000));
     this.timeouts.push(setTimeout(function() {stopMatching();}, this.tuneDuration*1000));
   }
 
