@@ -3,6 +3,9 @@ class ProduceTrainer {
   static smoothThreshold = 10;
   height = 20;//number of sts tall the canvas is, with 0/mean in the middle.
   static band = 0.05;
+  canvasHeight = '500';
+  tuneWidth = '100';
+  tryWidth = '600';
   adjustedDuration = 0.7;
   tuneDuration = 8;
   guideToneDuration = 2;
@@ -10,6 +13,7 @@ class ProduceTrainer {
   canvases;
   static playColor = 'LawnGreen';
   static stoppedColor = '';
+  tryMargin = 100;
 
   audioProducer = ChaoAudioProducer;
   div;
@@ -26,8 +30,80 @@ class ProduceTrainer {
   playState;
 
   constructor(document, parentDiv, startAudio) {
-    const that = this;
     this.div = document.createElement('div');
+    this.buildButtons(document, this.div, startAudio);
+    const graphDiv = document.createElement('div');
+    this.buildTuners(document, graphDiv, startAudio);
+    this.buildTry(document, graphDiv, startAudio);
+
+    //finish up
+    this.div.appendChild(graphDiv);
+    parentDiv.appendChild(this.div);
+    this.timeouts = [];
+    this.playState = 'none'
+  }
+
+  buildTry(document, graphDiv, startAudio) {
+    const that = this;
+
+    const div = document.createElement('div');
+    div.style.display = 'inline-block';
+    div.style.border = '1px solid';
+    div.style.width = this.tryWidth + 'px';
+    this.tryCanvas = document.createElement('canvas');
+    this.tryCanvas.height = this.canvasHeight;
+    this.tryCanvas.width = this.tryWidth;
+    div.appendChild(this.tryCanvas);
+    const tryButton = document.createElement('button');
+    tryButton.style.width = '100%';
+    tryButton.innerHTML = 'Try It!';
+    //TODO button.onclick = blah
+    div.appendChild(tryButton);
+    const listenButton = document.createElement('button');
+    listenButton.style.width = '100%';
+    listenButton.innerHTML = 'Listen to Adjusted Reference';
+    div.appendChild(listenButton);
+    listenButton.onclick = startAudio(function(audioContext, stream) { that.playAdjusted(audioContext, listenButton, 1);});
+    graphDiv.appendChild(div);
+  }
+
+  buildTuners(document, graphDiv, startAudio) {
+    const that = this;
+
+    this.canvases = {};
+    for(const type of ['start','end']) {
+      const div = document.createElement('div');
+      div.style.display = 'inline-block';
+      div.style.border = '1px solid';
+      div.style.width = '100px';
+      //canvas
+      const canvas = document.createElement('canvas');
+      div.appendChild(canvas);
+      canvas.height = this.canvasHeight;
+      canvas.width = this.tuneWidth;
+      //button
+      const button = document.createElement('button');
+      button.innerHTML = type;
+      button.style.width = '100%';
+      div.appendChild(button);
+      const turnLabel = document.createElement('label');
+      turnLabel.style.color = 'green';
+      turnLabel.innerHTML = 'Your Turn!';
+      turnLabel.style.visibility = 'hidden';
+      div.appendChild(turnLabel);
+      button.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, button, canvas, turnLabel);});
+      graphDiv.appendChild(div);
+      const span = document.createElement('span');
+      span.style.width = '25px';
+      span.style.display = 'inline-block';
+      graphDiv.appendChild(span);
+      this.canvases[type] = canvas;
+    }
+  }
+
+  buildButtons(document, div, startAudio) {
+    const that = this;
+
     //exemplar
     const exemplarDiv = document.createElement('div');
     var label = document.createElement('label');
@@ -37,7 +113,7 @@ class ProduceTrainer {
     exButton.innerHTML = 'Play!';
     exButton.onclick = function() {that.playExemplar(exButton);};
     exemplarDiv.appendChild(exButton);
-    this.div.appendChild(exemplarDiv);
+    div.appendChild(exemplarDiv);
     //adjusted For voice
     const adjustedDiv = document.createElement('div');
     label = document.createElement('label');
@@ -57,42 +133,8 @@ class ProduceTrainer {
     adjSlowButton.onclick = startAudio(function(audioContext, stream) { that.playAdjusted(audioContext, adjSlowButton, 0.5);});
     adjustedDiv.appendChild(adjSlowButton);
     //add to div
-    this.div.appendChild(adjustedDiv);
-    const graphDiv = document.createElement('div');
-    this.canvases = {};
-    for(const type of ['start','end']) {
-      const div = document.createElement('div');
-      div.style.display = 'inline-block';
-      div.style.border = '1px solid';
-      div.style.width = '100px';
-      //canvas
-      const canvas = document.createElement('canvas');
-      div.appendChild(canvas);
-      canvas.height = '500';
-      canvas.width = '100';
-      //button
-      const button = document.createElement('button');
-      button.innerHTML = type;
-      button.style.width = '100%';
-      div.appendChild(button);
-      const turnLabel = document.createElement('label');
-      turnLabel.style.color = 'green';
-      turnLabel.innerHTML = 'Your Turn!';
-      turnLabel.style.visibility = 'hidden';
-      div.appendChild(turnLabel);
-      button.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, button, canvas, turnLabel);});
-      graphDiv.appendChild(div);
-      const span = document.createElement('span');
-      span.style.width = '25px';
-      span.style.display = 'inline-block';
-      graphDiv.appendChild(span);
-      this.canvases[type] = canvas;
-    }
-    this.div.appendChild(graphDiv);
-    //finish up
-    parentDiv.appendChild(this.div);
-    this.timeouts = [];
-    this.playState = 'none'
+    div.appendChild(adjustedDiv);
+
   }
 
   checkState() {
@@ -241,6 +283,27 @@ class ProduceTrainer {
       const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
       const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-this.mean)/this.height));
       ProduceTrainer.drawLine(canvas, targetY, null);
+    }
+    const contour = this.audioProducer.getToneContour(this.tone,this.mean,this.sd);
+    ProduceTrainer.drawContour(this.tryCanvas, contour, this.tryMargin,this.mean, this.height);
+  }
+
+  static drawContour(canvas, contour, margin, mean, height) {
+    ProduceTrainer.clearCanvas(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    if(canvas.width < 2*margin) {console.log('canvas too small for margins'); return;}
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'black';
+    for(var idx = 0; idx < contour.length; idx ++) {
+      const x = margin + contour[idx][0]*(canvas.width - 2*margin)
+      const y = canvas.height * (1-(0.5 + (contour[idx][1]-mean)/height))
+      if(idx == 0) {
+        ctx.moveTo(x,y);
+      } else {
+        ctx.lineTo(x,y);
+        ctx.stroke();
+      }
     }
   }
 

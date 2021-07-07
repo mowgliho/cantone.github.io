@@ -85,4 +85,9 @@ class ChaoAudioProducer {
   static getCitation(tone, start) {
     return(ChaoAudioProducer.tones[tone][start?0:1]-3);
   }
+
+  //returns value in sts
+  static getToneContour(tone, mean, sd) {
+    return([[0,ChaoAudioProducer.getSt(tone, mean, sd, true)], [1,ChaoAudioProducer.getSt(tone,mean,sd,false)]]);
+  }
 }
