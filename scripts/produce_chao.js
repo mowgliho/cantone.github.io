@@ -33,15 +33,25 @@ class ChaoAudioProducer {
 
   //for the chao producer, we only look at mean and tone
   static adjustedTone(audioContext, char, tone, mean, sd, duration) {
-    const start = ChaoAudioProducer.getSt(tone, mean, sd, true);
-    const end = ChaoAudioProducer.getSt(tone, mean, sd, false);
+    const start = ChaoAudioProducer.getShiftedSt(tone, mean, sd, true);
+    const end = ChaoAudioProducer.getShiftedSt(tone, mean, sd, false);
 
-    let sampleRate = audioContext.sampleRate;
+    return(ChaoAudioProducer.createNode(audioContext, start, end, duration));
+  }
+
+  //for the chao producer, we only look at mean and tone
+  static guideTone(audioContext, char, tone, mean, sd, start, duration) {
+    const st = ChaoAudioProducer.getShiftedSt(tone, mean, sd, start);
+    return(ChaoAudioProducer.createNode(audioContext, st, st, duration));
+  }
+
+  static createNode(audioContext, startSt, endSt, duration) {
+    const sampleRate = audioContext.sampleRate;
     // define guidetone
     const node = audioContext.createBufferSource();
     var buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
     var bufferData = buffer.getChannelData(0);
-    ChaoAudioProducer.fillContourArray(bufferData, sampleRate, start, end);
+    ChaoAudioProducer.fillContourArray(bufferData, sampleRate, startSt, endSt);
     node.buffer = buffer;
     return(node);
   }
@@ -49,6 +59,7 @@ class ChaoAudioProducer {
   //taper in and out over 0.1s
   //does linear interpolation (in log space!)
   static fillContourArray(array, sampleRate, startSt, endSt) {
+    console.log(startSt, endSt);
     const len = array.length;
     var phase = 0;
     for(var i = 0; i < len; i++) {
@@ -63,7 +74,16 @@ class ChaoAudioProducer {
     }
   }
 
+  static getShiftedSt(tone, mean, sd, start) {
+    const shift = ChaoAudioProducer.shift(mean)*12;
+    return(ChaoAudioProducer.getSt(tone, mean, sd, start) + shift);
+  }
+
   static getSt(tone, mean, sd, start) {
-    return(mean + (ChaoAudioProducer.tones[tone][start?0:1]-3)*ChaoAudioProducer.sd + ChaoAudioProducer.shift(mean)*12);
+    return(mean + (ChaoAudioProducer.getCitation(tone, start)*ChaoAudioProducer.sd));
+  }
+
+  static getCitation(tone, start) {
+    return(ChaoAudioProducer.tones[tone][start?0:1]-3);
   }
 }

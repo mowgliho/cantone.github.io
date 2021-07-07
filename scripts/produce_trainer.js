@@ -1,5 +1,11 @@
 class ProduceTrainer {
+  height = 20;//number of sts tall the canvas is, with 0/mean in the middle.
+  static band = 0.05;
   adjustedDuration = 0.7;
+  tuneDuration = 8;
+  guideToneDuration = 2;
+  measurementInterval = 25;
+  canvases;
   static playColor = 'LawnGreen';
   static stoppedColor = '';
 
@@ -12,6 +18,7 @@ class ProduceTrainer {
   sd;
   char;
   tone;
+  timeouts;
 
   //state
   playState;
@@ -49,25 +56,124 @@ class ProduceTrainer {
     adjustedDiv.appendChild(adjSlowButton);
     //add to div
     this.div.appendChild(adjustedDiv);
+    const graphDiv = document.createElement('div');
+    this.canvases = {};
+    for(const type of ['start','end']) {
+      const div = document.createElement('div');
+      div.style.display = 'inline-block';
+      div.style.border = '1px solid';
+      div.style.width = '100px';
+      //canvas
+      const canvas = document.createElement('canvas');
+      div.appendChild(canvas);
+      canvas.height = '500';
+      canvas.width = '100';
+      //button
+      const button = document.createElement('button');
+      button.innerHTML = type;
+      button.style.width = '100%';
+      button.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, button, canvas);});
+      div.appendChild(button);
+      graphDiv.appendChild(div);
+      const span = document.createElement('span');
+      span.style.width = '25px';
+      span.style.display = 'inline-block';
+      graphDiv.appendChild(span);
+      this.canvases[type] = canvas;
+    }
+    this.div.appendChild(graphDiv);
     //finish up
     parentDiv.appendChild(this.div);
+    this.timeouts = [];
     this.playState = 'none'
+  }
+
+  checkState() {
+    return(this.playState != 'playing' && Object.keys(Chars.data).includes(this.char));
+  }
+
+  matchTone(audioContext, stream, type, button, canvas) {
+    console.log('start');
+    if(!this.checkState()) return;
+    this.playState = 'playing';
+    const buttonFn = button.onclick;
+    button.style.backgroundColor = ProduceTrainer.playColor
+    button.innerHTML = 'click to stop';
+    const stopMatching = function() {
+      button.style.backgroundColor = ProduceTrainer.stoppedColor;
+      that.stop();
+      button.onclick = buttonFn;
+    }
+    button.onclick = stopMatching;
+
+    let that = this;
+
+    //setup recording/analyzing
+    const analyzer = audioContext.createAnalyser();
+    analyzer.fftsize = Math.pow(2,9);
+    audioContext.createMediaStreamSource(stream).connect(analyzer)
+    const sampleRate = audioContext.sampleRate;
+    const data = new Float32Array(analyzer.fftSize)
+    const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
+    const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-that.mean)/that.height));
+    console.log(targetY, targetSt);
+
+    const intervalFn = function() {
+      analyzer.getFloatTimeDomainData(data);
+      const st = 49 + 12*Math.log2(yin(data, sampleRate)/440);
+      const val = Math.max(0, Math.min(1, 0.5 + (st-that.mean)/that.height));
+      ProduceTrainer.drawLine(canvas, targetY, val);
+    }
+
+    // define guidetone
+    const audioNode = this.audioProducer.guideTone(audioContext, this.char, this.tone, this.mean, this.sd, type == 'start', this.guideToneDuration)
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 1.3;
+    audioNode.connect(gainNode).connect(audioContext.destination);
+    audioNode.start();
+
+    this.timeouts.push(setTimeout(function() { that.timeouts.push(setInterval(intervalFn, this.measurementInterval))}, this.guideToneDuration*1000));
+    this.timeouts.push(setTimeout(function() {stopMatching();}, this.tuneDuration*1000));
+  }
+
+  static clearCanvas(canvas) {
+    let ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    ctx.beginPath();
+  }
+
+  //start, end are floats between 0 and 1, and go UP
+  static drawLine(canvas, contour, redLine) {
+    ProduceTrainer.clearCanvas(canvas);
+    let ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(0,(1-contour)*canvas.height);
+    ctx.lineTo(canvas.width, (1-contour)*canvas.height);
+    ctx.strokeStyle = 'black';
+    ctx.stroke();
+    if(!(redLine == null)) {
+      ctx.beginPath();
+      ctx.moveTo(0,(1-redLine)*canvas.height);
+      ctx.lineTo(canvas.width, (1-redLine)*canvas.height);
+      ctx.strokeStyle = (Math.abs(redLine - contour) < ProduceTrainer.band)? 'green':'red';
+      ctx.stroke();
+    }
   }
 
   playExemplar(button) {
     const that = this;
-    if(this.playState == 'playing' || !(Object.keys(Chars.data).includes(this.char))) return;
+    if(!this.checkState()) return;
     this.playState = 'playing'
     var audio = new Audio(Chars.data[this.char]['filename']);
     button.style.backgroundColor = ProduceTrainer.playColor
-    audio.onended = function() { that.playState = 'none';button.style.backgroundColor = ProduceTrainer.stoppedColor;};
+    audio.onended = function() { that.stop();button.style.backgroundColor = ProduceTrainer.stoppedColor;};
     audio.play();
   }
 
   playAdjusted(audioContext, button, speed) {
     const that = this;
     //ui stuff
-    if(this.playState == 'playing' || !(Object.keys(Chars.data).includes(this.char))) return;
+    if(!this.checkState()) return;
     this.playState = 'playing'
     button.style.backgroundColor = ProduceTrainer.playColor;
     //play audio
@@ -81,14 +187,28 @@ class ProduceTrainer {
     audioNode.stop(duration*1000);
     //ui stuff
     audioNode.onended = function() {
-      that.playState = 'none';
+      that.stop();
       button.style.backgroundColor = ProduceTrainer.stoppedColor;
     }
+  }
+
+  stop() {
+    this.playState = 'none';
+    for(const timeout of this.timeouts) {
+      clearTimeout(timeout);
+    }
+    this.timeouts = [];
   }
 
   updateChar(char) {
     this.char = char;
     this.tone = Chars.data[this.char]['tone'];
+    for(const [type, canvas] of Object.entries(this.canvases)) {
+      ProduceTrainer.clearCanvas(canvas);
+      const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
+      const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-this.mean)/this.height));
+      ProduceTrainer.drawLine(canvas, targetY, null);
+    }
   }
 
   updateParams(mean, sd) {
