@@ -59,7 +59,6 @@ class ChaoAudioProducer {
   //taper in and out over 0.1s
   //does linear interpolation (in log space!)
   static fillContourArray(array, sampleRate, startSt, endSt) {
-    console.log(startSt, endSt);
     const len = array.length;
     var phase = 0;
     for(var i = 0; i < len; i++) {
