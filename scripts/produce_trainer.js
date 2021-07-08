@@ -2,6 +2,7 @@
 class ProduceTrainer {
   static smoothLength = 5;
   static smoothThreshold = 10;
+  static silenceBuffer = 1;
   height = 20;//number of sts tall the canvas is, with 0/mean in the middle.
   static band = 0.05;
   canvasHeight = '500';
@@ -12,7 +13,7 @@ class ProduceTrainer {
   guideToneDuration = 2;
   maxTryDuration = 3;
   measurementInterval = 25;
-  tryDBCutoff = Math.log2(0.01);
+  static tryDBCutoff = Math.log2(0.01);
   tryDetectThreshold = 10;
   canvases;
   static playColor = 'LawnGreen';
@@ -21,7 +22,6 @@ class ProduceTrainer {
 
   audioProducer = ChaoAudioProducer;
   div;
-  octaveLabel;
 
   //stuff that changes
   mean;
@@ -123,9 +123,6 @@ class ProduceTrainer {
     label = document.createElement('label');
     label.innerHTML = 'Adjusted for your vocal range: '
     adjustedDiv.appendChild(label);
-    this.octaveLabel = document.createElement('label');
-    this.octaveLabel.style.color = 'blue';
-    adjustedDiv.appendChild(this.octaveLabel);
     //play button
     const adjButton = document.createElement('button');
     adjButton.innerHTML = 'Play!';
@@ -168,6 +165,7 @@ class ProduceTrainer {
     //detect if voice
     var count = 0;
     var on = false;
+    var onIdx = -1;
 
     const stop = function() {
       that.stop();
@@ -183,13 +181,14 @@ class ProduceTrainer {
       timestamps[idx] = new Date().getTime();
       //detect voice
       const vol = Math.log2(Math.sqrt(data.reduce((a, x) => a + x**2)/data.length));
-      if(on == (vol < that.tryDBCutoff)) count += 1;
+      if(on == (vol < that.silence)) count += 1;
       if(count > that.tryDetectThreshold) {
         count = 0;
         if(!on) {
           on = true;
+          onIdx = idx;
         } else {
-          that.plotTry(st, timestamps);
+          that.plotTry(st, timestamps, onIdx, idx);
           stop();
         }
       }
@@ -197,20 +196,19 @@ class ProduceTrainer {
     }
 
     this.timeouts.push(setInterval(intervalFn, this.measurementInterval));
-    this.timeouts.push(setTimeout(function() {that.plotTry(st, timestamps); stop()}, this.maxTryDuration*1000));
+    this.timeouts.push(setTimeout(function() {that.plotTry(st, timestamps, onIdx, idx-1); stop()}, this.maxTryDuration*1000));
   }
 
-  plotTry(st, timestamps) {
+  plotTry(st, timestamps, startIdx, endIdx) {
+    if(startIdx == -1) return;//didn't detect anything
+    startIdx = Math.max(0, startIdx - this.tryDetectThreshold);
+    endIdx = Math.max(0, endIdx - this.tryDetectThreshold);
     const idxs = []
-    for(var i = 0; i < st.length; i++) {
-      if(0.5 + (st[i]-this.mean)/this.height > 0) idxs.push(i);
-      if(typeof st[i] == 'undefined') break;
-    }
-    const start = timestamps[idxs[0]];
-    const duration = timestamps[idxs[idxs.length - 1]] - start;
+    const start = timestamps[startIdx];
+    const duration = timestamps[endIdx] - start;
     const contour = [];
-    for(var i of idxs) {
-      contour.push([(timestamps[i] - start)/duration,st[i]]);
+    for(var i = startIdx; i <= endIdx; i++) {
+      if(0.5 + (st[i]-this.mean)/this.height > 0) contour.push([(timestamps[i] - start)/duration,st[i]]);
     }
     const citationContour = this.audioProducer.getToneContour(this.tone,this.mean,this.sd);
     const contours = [
@@ -234,7 +232,7 @@ class ProduceTrainer {
     audioContext.createMediaStreamSource(stream).connect(analyzer)
     const sampleRate = audioContext.sampleRate;
     const data = new Float32Array(analyzer.fftSize)
-    const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
+    const targetSt = this.audioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
     const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-that.mean)/that.height));
 
     const smoother = ProduceTrainer.getSmoother(ProduceTrainer.smoothLength, ProduceTrainer.smoothThreshold);
@@ -359,7 +357,7 @@ class ProduceTrainer {
     this.tone = Chars.data[this.char]['tone'];
     for(const [type, canvas] of Object.entries(this.canvases)) {
       ProduceTrainer.clearCanvas(canvas);
-      const targetSt = ChaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
+      const targetSt = this.audioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
       const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-this.mean)/this.height));
       ProduceTrainer.drawLine(canvas, targetY, null);
     }
@@ -389,15 +387,11 @@ class ProduceTrainer {
     }
   }
 
-  updateParams(mean, sd) {
+  updateParams(mean, sd, silence) {
     this.mean = mean;
     this.sd = sd;
-    var shift = this.audioProducer.shift(mean);
-    if(shift > 0) {
-      this.octaveLabel.innerHTML = '(shifted up ' + shift + ' octave' + (shift > 1?'s':'') + ' for audibility) ';
-    } else {
-      this.octaveLabel.innerHTML = '';
-    }
+    if(silence > 0) this.silence = Math.max(ProduceTrainer.tryDBCutoff, Math.log2(silence)) + ProduceTrainer.silenceBuffer;
+    else this.silence = ProduceTrainer.tryDBCutoff + ProduceTrainer.silenceBuffer;
   }
 
   show() {

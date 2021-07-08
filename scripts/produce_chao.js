@@ -20,28 +20,19 @@ class ChaoAudioProducer {
     '6':[2,2]
   }
   static sd = 3.2;
-  static meanCutoff = 30.37 + ChaoAudioProducer.sd//mean will be chao tone 3, we go down two sds (but only for tone 4, so let's cut at going down one sd), 30.37 is 150hz, where starts to be hard to hear
   static taperLength = 0.1;
-
-  static shift(mean) {
-    var shift = 0;
-    while(mean + 12*shift < ChaoAudioProducer.meanCutoff) {
-      shift += 1;
-    }
-    return(shift);
-  }
 
   //for the chao producer, we only look at mean and tone
   static adjustedTone(audioContext, char, tone, mean, sd, duration) {
-    const start = ChaoAudioProducer.getShiftedSt(tone, mean, sd, true);
-    const end = ChaoAudioProducer.getShiftedSt(tone, mean, sd, false);
+    const start = ChaoAudioProducer.getSt(tone, mean, sd, true);
+    const end = ChaoAudioProducer.getSt(tone, mean, sd, false);
 
     return(ChaoAudioProducer.createNode(audioContext, start, end, duration));
   }
 
   //for the chao producer, we only look at mean and tone
   static guideTone(audioContext, char, tone, mean, sd, start, duration) {
-    const st = ChaoAudioProducer.getShiftedSt(tone, mean, sd, start);
+    const st = ChaoAudioProducer.getSt(tone, mean, sd, start);
     return(ChaoAudioProducer.createNode(audioContext, st, st, duration));
   }
 
@@ -71,11 +62,6 @@ class ChaoAudioProducer {
       );
       array[i] = amplitude * Math.sin(phase);
     }
-  }
-
-  static getShiftedSt(tone, mean, sd, start) {
-    const shift = ChaoAudioProducer.shift(mean)*12;
-    return(ChaoAudioProducer.getSt(tone, mean, sd, start) + shift);
   }
 
   static getSt(tone, mean, sd, start) {
