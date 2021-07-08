@@ -12,7 +12,7 @@ class ProduceTrainer {
   tuneDuration = 8;
   guideToneDuration = 2;
   maxTryDuration = 3;
-  measurementInterval = 25;
+  measurementInterval = 10;
   static tryDBCutoff = Math.log2(0.01);
   tryDetectThreshold = 10;
   canvases;
