@@ -21,7 +21,6 @@
     <script src="scripts/calib.js"></script>
     <script src="scripts/produce_chao.js"></script>
     <script src="scripts/produce_trainer.js"></script>
-    <script src="scripts/produce_ideal.js"></script>
     <script src="scripts/produce_proto.js"></script>
     <script src="scripts/produce.js"></script>
     <script src="scripts/listen_mono.js"></script>
@@ -57,31 +56,7 @@
     <!-- production -->
     <div id="div-produce" style="display: none;">
       <div id="div-produce-calib"></div>
-      <div id="div-produce-train">
-        <div id="div-produce-mode">
-          <button id="produce-mode-ideal">Idealized</button>
-          <button id="produce-mode-proto">Prototype</button>
-        </div>
-        <hr>
-        <div id="div-produce-ideal" style="display:none;">
-          Tone: <select id="produce-ideal-tone"></select>
-          <div id="div-produce-ideal-window">
-            <div style="width:100px;display:inline-block">
-              <canvas id="produce-ideal-start-col" height="500" width="100"></canvas>
-              <button id="produce-ideal-start-button" style="width:100%;">Initial</button>
-            </div>
-            <div style="width:500px;display:inline-block">
-              <canvas id="produce-ideal-main-col" height="500" width="500"></canvas>
-              <button id="produce-ideal-main-button" style="width:100%;">Try It!</button>
-            </div>
-            <div style="width:100px;display:inline-block">
-              <canvas id="produce-ideal-end-col" height="500" width="100"></canvas>
-              <button id="produce-ideal-end-button" style="width:100%;">Final</button>
-            </div>
-          </div>
-        </div>
-        <div id="div-produce-proto" style="display:none;"></div>
-      </div>
+      <div id="div-produce-train"></div>
     </div>
 
 
