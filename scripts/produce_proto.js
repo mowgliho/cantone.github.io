@@ -159,8 +159,8 @@ class ProtoProducer {
     }
   }
 
-  update(mean, sd) {
-    this.trainer.updateParams(mean,sd);
+  update(mean, sd, silence) {
+    this.trainer.updateParams(mean,sd, silence);
     this.innerUpdate();
   }
 }
