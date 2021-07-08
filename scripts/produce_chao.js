@@ -63,7 +63,7 @@ class ChaoAudioProducer {
     var phase = 0;
     for(var i = 0; i < len; i++) {
       const st = ((len - i)/len) * startSt + (i/len) * endSt;
-      const freq = Math.exp((st - 49)/12)*440;
+      const freq = Math.pow(2,(st - 49)/12)*440;
       phase += 2 * Math.PI * freq / sampleRate;
       const amplitude = Math.min(
         Math.min(1,i/(ChaoAudioProducer.taperLength*sampleRate)),
