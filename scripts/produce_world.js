@@ -1,10 +1,22 @@
 class WorldAudioProducer {
   static humanumMean = 38.1//in semitones
   static worldJSSpeed = 16;
+  static checked = ['p','t','k'];
+  static cutpoints = {checked:{start:0.5,end:0.5},normal:{start:0.2,end:0.8}};
+  static apThreshold = 0.5
+  static minApBand = 5;
+  static spectralTuneWidth = 0.1;
+  //from looking at humanum data
+  static tuneSts = {
+    start:{'1':45, '2':35,'3':40,'4':37,'5':34,'6':37},
+    end:{'1':45, '2':42.5,'3':40,'4':29,'5':37.5,'6':35}
+  }
+
   timeouts;
   world;
   audioBuffers;
   audioCtx;
+  tuningDuration;
 
   audioLoaded;
   f0;
@@ -18,8 +30,10 @@ class WorldAudioProducer {
   mean;
   sd;
 
-  constructor(trainer) {
+  constructor(trainer, tuningDuration) {
     const that = this;
+
+    this.tuningDuration = tuningDuration;
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     this.audioBuffers = {};
@@ -40,11 +54,13 @@ class WorldAudioProducer {
     }
   }
 
-  loadCharacter(char) {
+  loadCharacter(char, tone) {
     const that = this;
 
     this.audioBuffers = {};
     this.audioLoaded = false;
+    this.tone = tone;
+    this.char = char.slice(0,-1);
     const url = CONFIG['WorldFilePrefix'] + char + '.wav'
     const req = new XMLHttpRequest();
     req.open('GET', url);
@@ -81,19 +97,106 @@ class WorldAudioProducer {
     this.synth = {};
     //shift for whole syllable
     const shift = this.mean - WorldAudioProducer.humanumMean;
-    const f0 = WorldAudioProducer.semitoneArrayToFreq(WorldAudioProducer.freqArrayToSemitone(this.f0, shift));
-    this.synth['char'] = WorldAudioProducer.float64To32(this.world.Synthesis(f0, this.spectral, this.aperiodicity, this.fft_size, this.sampleRate, WorldAudioProducer.worldJSSpeed));
+    const charf0 = WorldAudioProducer.semitoneArrayToFreq(WorldAudioProducer.freqArrayToSemitone(this.f0, shift));
+    this.synth['char'] = WorldAudioProducer.float64To32(this.world.Synthesis(charf0, this.spectral, this.aperiodicity, this.fft_size, this.sampleRate, WorldAudioProducer.worldJSSpeed));
+    //beginning elements
+    const [voiceStart,voiceEnd] = this.getVoicedIndices(this.aperiodicity);
+    const cutpoints = WorldAudioProducer.cutpoints[WorldAudioProducer.checked.includes(this.char.slice(-1))?'checked':'normal'];
+    for(const [type, point] of Object.entries(cutpoints)) {
+      //get indices
+      const midIdx = voiceStart + (point)*(voiceEnd - voiceStart)
+      const startIdx = Math.ceil(midIdx - (WorldAudioProducer.spectralTuneWidth/2)*(voiceEnd-voiceStart));
+      const endIdx = Math.floor(midIdx + (WorldAudioProducer.spectralTuneWidth/2)*(voiceEnd-voiceStart));
+      //get the desired spectrum, aperiodicty, f0
+      const spectrum = this.getMedians(this.spectral.slice(startIdx, endIdx));
+      const aperiodicity = this.getMedians(this.aperiodicity.slice(startIdx, endIdx));
+      const f0 = WorldAudioProducer.semitoneToFreq(WorldAudioProducer.tuneSts[type][this.tone] + shift);
+      //repeat for desired length
+      const indicesPerSecond = this.f0.length/(this.synth['char'].length/this.sampleRate);
+      const numInds = Math.max(1,Math.round(indicesPerSecond*this.tuningDuration));
+      const spectra = this.duplicate(spectrum, numInds);
+      const aperioda = this.duplicate(aperiodicity, numInds);
+      const f0s = this.duplicate(f0, numInds);
+      this.synth[type] = WorldAudioProducer.float64To32(this.world.Synthesis(f0s, spectra, aperioda, this.fft_size, this.sampleRate, WorldAudioProducer.worldJSSpeed));
+    }
     this.trainer.updateVocoderStatus('Vocoded to your vocal range: ', true);
   }
 
-  getCharAudio(audioCtx) {
+  duplicate(x, n) {
+    const ret = [];
+    for(var i = 0; i < n; i++) {
+      ret.push(x);
+    }
+    return ret;
+  }
+
+  getMedians(spectra) {
+    const ret = new Float64Array(spectra[0].length);
+    for(var i = 0; i < ret.length; i++) {
+      const vals = new Float64Array(spectra.length);
+      for(var j = 0; j < vals.length; j++) {
+        vals[j] = spectra[j][i]
+      }
+      ret[i] = this.getMedian(vals);
+    }
+    return ret;
+  }
+
+  getMedian(values){
+    if(values.length == 0) return 0;
+    values.sort(function(a,b){
+      return a-b;
+    });
+    var half = Math.floor(values.length / 2);
+    if (values.length % 2) return values[half];
+    return (values[half - 1] + values[half]) / 2.0;
+  }
+
+  //checks if first 10th of fft buckets are below 0.5
+  getVoicedIndices(aperiodicity) {
+    const apBuckets = [];
+    for(var j = 0; j < this.spectral.length; j++) {
+      apBuckets.push(this.getMedian(aperiodicity[j].slice(0,Math.floor(aperiodicity[j].length/10))))
+    }
+    var start = null;
+    var end = null;
+    var startCount = 0;
+    var endCount = 0;
+    for(var i = 0; i < apBuckets.length; i++) {
+      if(start == null) {
+        if(apBuckets[i] < WorldAudioProducer.apThreshold) startCount += 1;
+        else startCount = 0;
+        if(startCount >= WorldAudioProducer.minApBand) start = i - WorldAudioProducer.minApBand + 1;
+      }
+      if(end == null) {
+        if(apBuckets[apBuckets.length-i] < WorldAudioProducer.apThreshold) endCount += 1;
+        else endCount = 0;
+        if(endCount >= WorldAudioProducer.minApBand) end = (apBuckets.length-i) + WorldAudioProducer.minApBand - 1;
+      }
+    }
+    if(start == null || end == null || end <= start) {
+      start = Math.floor(apBuckets.length/2);
+      end = Math.ceil(apBuckets.length/2);
+    }
+    return [start,end];
+  }
+
+  getCharAudio(audioCtx, type) {
     const node = audioCtx.createBufferSource();
-    const samples = this.synth['char']
+    const samples = this.synth[type]
     var nodeBuffer = audioCtx.createBuffer(1, samples.length, this.sampleRate);
     nodeBuffer.copyToChannel(samples,0);
     node.buffer = nodeBuffer;
     const duration = samples.length/this.sampleRate;
     return [node,duration];
+  }
+
+  //as in Zhang 2018, use middle 80% (tone/nucleus as in Yang)
+  //Tone contour begins and ends at syllable (Xu), so we adjust accordingly based on the tone
+  //for checked tones (ptk at end), we use the middle (they are level tones and mostly short): checked that all characters with 'p', 't', and 'k' at the end are indeed t1,3,6
+  //We get start/end differences from humanum
+  getTuningAudio(audioCtx) {
+
   }
 
   clearTimeouts() {

@@ -21,7 +21,7 @@ class ProduceTrainer {
   tryMargin = 100;
   vocoderStatus;
   vocoderButton;
-  tryVocoderButton;
+  vocoderButtons;
 
   chaoAudioProducer = ChaoAudioProducer;
   worldAudioProducer;
@@ -39,8 +39,9 @@ class ProduceTrainer {
   playState;
 
   constructor(document, parentDiv, startAudio) {
-    this.worldAudioProducer = new WorldAudioProducer(this);
+    this.worldAudioProducer = new WorldAudioProducer(this, this.guideToneDuration);
     this.div = document.createElement('div');
+    this.vocoderButtons = [];
     this.buildButtons(document, this.div, startAudio);
     const graphDiv = document.createElement('div');
     this.buildTuners(document, graphDiv, startAudio);
@@ -69,8 +70,9 @@ class ProduceTrainer {
     const listenButton = this.addButton(document, div, 'Adjusted Reference: Pure Tone');
     listenButton.onclick = startAudio(function(audioContext, stream) { that.playAdjusted(audioContext, listenButton, 1);});
     // vocoder
-    this.tryVocoderButton = this.addButton(document, div, 'Adjusted Reference: Vocoder');
-    this.tryVocoderButton.onclick = startAudio(function(audioContext, stream) { that.playVocoder(audioContext, that.tryVocoderButton);});
+    const tryVocoderButton = this.addButton(document, div, 'Adjusted Reference: Vocoder');
+    tryVocoderButton.onclick = startAudio(function(audioContext, stream) { that.playVocoder(audioContext, tryVocoderButton, 'char');});
+    this.vocoderButtons.push(tryVocoderButton);
     //try button
     const tryButton = this.addButton(document, div, 'Try It!');
     tryButton.onclick = startAudio(function(audioContext,stream) {that.try(audioContext,stream,tryButton,that.tryCanvas)});
@@ -87,12 +89,12 @@ class ProduceTrainer {
     return button;
   }
 
-  playVocoder(audioContext, button) {
+  playVocoder(audioContext, button, type) {
     const that = this;
     if(!this.worldReady) return;
 
     button.style.backgroundColor = ProduceTrainer.playColor;
-    const [audioNode, duration] = this.worldAudioProducer.getCharAudio(audioContext);
+    const [audioNode, duration] = this.worldAudioProducer.getCharAudio(audioContext,type);
     audioNode.connect(audioContext.destination);
     this.playState = 'playing';
 
@@ -127,6 +129,7 @@ class ProduceTrainer {
       //vocoder button
       const vocoderButton = this.addButton(document, div, 'vocode-' + type);
       vocoderButton.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, vocoderButton, canvas, turnLabel,'vocoder');});
+      this.vocoderButtons.push(vocoderButton);
       const turnLabel = document.createElement('label');
       turnLabel.style.color = 'green';
       turnLabel.innerHTML = 'Your Turn!';
@@ -176,11 +179,12 @@ class ProduceTrainer {
     //vocoder
     const vocoderDiv = document.createElement('div');
     this.vocoderStatus = document.createElement('label');
-    this.vocoderButton = document.createElement('Button');
-    this.vocoderButton.innerHTML = 'Play!';
-    this.vocoderButton.onclick = startAudio(function(audioContext, stream) { that.playVocoder(audioContext, that.vocoderButton);});
+    const vocoderButton = document.createElement('Button');
+    vocoderButton.innerHTML = 'Play!';
+    vocoderButton.onclick = startAudio(function(audioContext, stream) { that.playVocoder(audioContext, vocoderButton, 'char');});
     vocoderDiv.appendChild(this.vocoderStatus);
-    vocoderDiv.appendChild(this.vocoderButton);
+    vocoderDiv.appendChild(vocoderButton);
+    this.vocoderButtons.push(vocoderButton);
     div.appendChild(vocoderDiv);
   }
 
@@ -292,10 +296,20 @@ class ProduceTrainer {
     }
 
     // define guidetone
-    const audioNode = this.chaoAudioProducer.guideTone(audioContext, this.char, this.tone, this.mean, this.sd, type == 'start', this.guideToneDuration)
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = 1.3;
-    audioNode.connect(gainNode).connect(audioContext.destination);
+    var audioNode;
+    var duration;
+    if(audioType == 'pure') {
+      audioNode = this.chaoAudioProducer.guideTone(audioContext, this.char, this.tone, this.mean, this.sd, type == 'start', this.guideToneDuration)
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = 1.3;
+      audioNode.connect(gainNode).connect(audioContext.destination);
+      const duration = this.guideToneDuration;
+    } else if(audioType == 'vocoder') {
+      const worldAudio = this.worldAudioProducer.getCharAudio(audioContext,type);
+      audioNode = worldAudio[0];
+      duration = worldAudio[1];
+      audioNode.connect(audioContext.destination);
+    }
 
     const stopMatching = function() {
       button.style.backgroundColor = ProduceTrainer.stoppedColor;
@@ -309,7 +323,7 @@ class ProduceTrainer {
 
     audioNode.start();
 
-    this.timeouts.push(setTimeout(function() { turnLabel.style.visibility = 'visible'; that.timeouts.push(setInterval(intervalFn, this.measurementInterval))}, this.guideToneDuration*1000));
+    this.timeouts.push(setTimeout(function() { turnLabel.style.visibility = 'visible'; that.timeouts.push(setInterval(intervalFn, this.measurementInterval))}, duration*1000));
     this.timeouts.push(setTimeout(function() {stopMatching();}, this.tuneDuration*1000));
   }
 
@@ -411,7 +425,7 @@ class ProduceTrainer {
     const contour = this.chaoAudioProducer.getToneContour(this.tone,this.mean,this.sd);
     ProduceTrainer.drawContours(this.tryCanvas, [{'color': 'black', 'contour': contour}], this.tryMargin,this.mean, this.height);
     this.updateVocoderStatus('Vocoder: loading audio file',false);
-    this.worldAudioProducer.loadCharacter(char);
+    this.worldAudioProducer.loadCharacter(char, this.tone);
   }
 
   static drawContours(canvas, contours, margin, mean, height) {
@@ -458,7 +472,8 @@ class ProduceTrainer {
     this.worldReady = active;
     this.vocoderStatus.innerHTML = text;
     this.vocoderStatus.style.color = active?'black':'green';
-    this.vocoderButton.style.display = active?'inline-block':'none';
-    this.tryVocoderButton.disabled = !active;
+    for(const button of this.vocoderButtons) {
+      button.disabled = !active;
+    }
   }
 }
