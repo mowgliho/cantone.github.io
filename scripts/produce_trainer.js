@@ -19,8 +19,12 @@ class ProduceTrainer {
   static playColor = 'LawnGreen';
   static stoppedColor = '';
   tryMargin = 100;
+  vocoderStatus;
+  vocoderButton;
+  tryVocoderButton;
 
-  audioProducer = ChaoAudioProducer;
+  chaoAudioProducer = ChaoAudioProducer;
+  worldAudioProducer;
   div;
 
   //stuff that changes
@@ -29,11 +33,13 @@ class ProduceTrainer {
   char;
   tone;
   timeouts;
+  worldReady;
 
   //state
   playState;
 
   constructor(document, parentDiv, startAudio) {
+    this.worldAudioProducer = new WorldAudioProducer(this);
     this.div = document.createElement('div');
     this.buildButtons(document, this.div, startAudio);
     const graphDiv = document.createElement('div');
@@ -45,6 +51,7 @@ class ProduceTrainer {
     parentDiv.appendChild(this.div);
     this.timeouts = [];
     this.playState = 'none'
+    this.worldReady = false;
   }
 
   buildTry(document, graphDiv, startAudio) {
@@ -58,17 +65,46 @@ class ProduceTrainer {
     this.tryCanvas.height = this.canvasHeight;
     this.tryCanvas.width = this.tryWidth;
     div.appendChild(this.tryCanvas);
-    const tryButton = document.createElement('button');
-    tryButton.style.width = '100%';
-    tryButton.innerHTML = 'Try It!';
-    tryButton.onclick = startAudio(function(audioContext,stream) {that.try(audioContext,stream,tryButton,that.tryCanvas)});
-    div.appendChild(tryButton);
-    const listenButton = document.createElement('button');
-    listenButton.style.width = '100%';
-    listenButton.innerHTML = 'Listen to Adjusted Reference';
-    div.appendChild(listenButton);
+    //listen button
+    const listenButton = this.addButton(document, div, 'Adjusted Reference: Pure Tone');
     listenButton.onclick = startAudio(function(audioContext, stream) { that.playAdjusted(audioContext, listenButton, 1);});
+    // vocoder
+    this.tryVocoderButton = this.addButton(document, div, 'Adjusted Reference: Vocoder');
+    this.tryVocoderButton.onclick = startAudio(function(audioContext, stream) { that.playVocoder(audioContext, that.tryVocoderButton);});
+    //try button
+    const tryButton = this.addButton(document, div, 'Try It!');
+    tryButton.onclick = startAudio(function(audioContext,stream) {that.try(audioContext,stream,tryButton,that.tryCanvas)});
     graphDiv.appendChild(div);
+  }
+
+  addButton(document, div, text) {
+    const that = this;
+
+    const button = document.createElement('button');
+    button.style.width = '100%';
+    button.innerHTML = text
+    div.appendChild(button);
+    return button;
+  }
+
+  playVocoder(audioContext, button) {
+    const that = this;
+    if(!this.worldReady) return;
+
+    button.style.backgroundColor = ProduceTrainer.playColor;
+    const [audioNode, duration] = this.worldAudioProducer.getCharAudio(audioContext);
+    audioNode.connect(audioContext.destination);
+    this.playState = 'playing';
+
+    const stopPlaying = function() {
+      button.style.backgroundColor = ProduceTrainer.stoppedColor;
+      that.stop();
+      audioNode.stop();
+    }
+
+    audioNode.start();
+
+    this.timeouts.push(setTimeout(function() {stopPlaying();}, duration*1000));
   }
 
   buildTuners(document, graphDiv, startAudio) {
@@ -86,16 +122,16 @@ class ProduceTrainer {
       canvas.height = this.canvasHeight;
       canvas.width = this.tuneWidth;
       //button
-      const button = document.createElement('button');
-      button.innerHTML = type;
-      button.style.width = '100%';
-      div.appendChild(button);
+      const pureButton = this.addButton(document, div, 'pure-' + type);
+      pureButton.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, pureButton, canvas, turnLabel, 'pure');});
+      //vocoder button
+      const vocoderButton = this.addButton(document, div, 'vocode-' + type);
+      vocoderButton.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, vocoderButton, canvas, turnLabel,'vocoder');});
       const turnLabel = document.createElement('label');
       turnLabel.style.color = 'green';
       turnLabel.innerHTML = 'Your Turn!';
       turnLabel.style.visibility = 'hidden';
       div.appendChild(turnLabel);
-      button.onclick = startAudio(function(audioContext, stream) {that.matchTone(audioContext, stream, type, button, canvas, turnLabel);});
       graphDiv.appendChild(div);
       const span = document.createElement('span');
       span.style.width = '25px';
@@ -118,6 +154,7 @@ class ProduceTrainer {
     exButton.onclick = function() {that.playExemplar(exButton);};
     exemplarDiv.appendChild(exButton);
     div.appendChild(exemplarDiv);
+
     //adjusted For voice
     const adjustedDiv = document.createElement('div');
     label = document.createElement('label');
@@ -136,6 +173,15 @@ class ProduceTrainer {
     //add to div
     div.appendChild(adjustedDiv);
 
+    //vocoder
+    const vocoderDiv = document.createElement('div');
+    this.vocoderStatus = document.createElement('label');
+    this.vocoderButton = document.createElement('Button');
+    this.vocoderButton.innerHTML = 'Play!';
+    this.vocoderButton.onclick = startAudio(function(audioContext, stream) { that.playVocoder(audioContext, that.vocoderButton);});
+    vocoderDiv.appendChild(this.vocoderStatus);
+    vocoderDiv.appendChild(this.vocoderButton);
+    div.appendChild(vocoderDiv);
   }
 
   checkState() {
@@ -210,7 +256,7 @@ class ProduceTrainer {
     for(var i = startIdx; i <= endIdx; i++) {
       if(0.5 + (st[i]-this.mean)/this.height > 0) contour.push([(timestamps[i] - start)/duration,st[i]]);
     }
-    const citationContour = this.audioProducer.getToneContour(this.tone,this.mean,this.sd);
+    const citationContour = this.chaoAudioProducer.getToneContour(this.tone,this.mean,this.sd);
     const contours = [
       {color:'black', contour: citationContour},
       {color:'green', contour: contour}
@@ -218,10 +264,11 @@ class ProduceTrainer {
     ProduceTrainer.drawContours(this.tryCanvas, contours, this.tryMargin,this.mean, this.height);
   }
 
-  matchTone(audioContext, stream, type, button, canvas, turnLabel) {
+  matchTone(audioContext, stream, type, button, canvas, turnLabel, audioType) {
     if(!this.checkState()) return;
     this.playState = 'playing';
     const buttonFn = button.onclick;
+    const oldText = button.innerHTML;
     button.style.backgroundColor = ProduceTrainer.playColor
     button.innerHTML = 'click to stop';
     let that = this;
@@ -232,7 +279,7 @@ class ProduceTrainer {
     audioContext.createMediaStreamSource(stream).connect(analyzer)
     const sampleRate = audioContext.sampleRate;
     const data = new Float32Array(analyzer.fftSize)
-    const targetSt = this.audioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
+    const targetSt = this.chaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
     const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-that.mean)/that.height));
 
     const smoother = ProduceTrainer.getSmoother(ProduceTrainer.smoothLength, ProduceTrainer.smoothThreshold);
@@ -245,7 +292,7 @@ class ProduceTrainer {
     }
 
     // define guidetone
-    const audioNode = this.audioProducer.guideTone(audioContext, this.char, this.tone, this.mean, this.sd, type == 'start', this.guideToneDuration)
+    const audioNode = this.chaoAudioProducer.guideTone(audioContext, this.char, this.tone, this.mean, this.sd, type == 'start', this.guideToneDuration)
     const gainNode = audioContext.createGain();
     gainNode.gain.value = 1.3;
     audioNode.connect(gainNode).connect(audioContext.destination);
@@ -254,7 +301,7 @@ class ProduceTrainer {
       button.style.backgroundColor = ProduceTrainer.stoppedColor;
       that.stop();
       button.onclick = buttonFn;
-      button.innerHTML = type;
+      button.innerHTML = oldText;
       turnLabel.style.visibility = 'hidden';
       audioNode.stop();
     }
@@ -330,7 +377,7 @@ class ProduceTrainer {
     button.style.backgroundColor = ProduceTrainer.playColor;
     //play audio
     const duration = this.adjustedDuration/speed;
-    const audioNode = this.audioProducer.adjustedTone(audioContext, this.char, this.tone, this.mean, this.sd, duration)
+    const audioNode = this.chaoAudioProducer.adjustedTone(audioContext, this.char, this.tone, this.mean, this.sd, duration)
     // start guidetone
     const gainNode = audioContext.createGain();
     gainNode.gain.value = 1.3;
@@ -357,12 +404,14 @@ class ProduceTrainer {
     this.tone = Chars.data[this.char]['tone'];
     for(const [type, canvas] of Object.entries(this.canvases)) {
       ProduceTrainer.clearCanvas(canvas);
-      const targetSt = this.audioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
+      const targetSt = this.chaoAudioProducer.getSt(this.tone, this.mean, this.sd, type == 'start');
       const targetY = Math.max(0, Math.min(1, 0.5 + (targetSt-this.mean)/this.height));
       ProduceTrainer.drawLine(canvas, targetY, null);
     }
-    const contour = this.audioProducer.getToneContour(this.tone,this.mean,this.sd);
+    const contour = this.chaoAudioProducer.getToneContour(this.tone,this.mean,this.sd);
     ProduceTrainer.drawContours(this.tryCanvas, [{'color': 'black', 'contour': contour}], this.tryMargin,this.mean, this.height);
+    this.updateVocoderStatus('Vocoder: loading audio file',false);
+    this.worldAudioProducer.loadCharacter(char);
   }
 
   static drawContours(canvas, contours, margin, mean, height) {
@@ -392,6 +441,8 @@ class ProduceTrainer {
     this.sd = sd;
     if(silence > 0) this.silence = Math.max(ProduceTrainer.tryDBCutoff, Math.log2(silence)) + ProduceTrainer.silenceBuffer;
     else this.silence = ProduceTrainer.tryDBCutoff + ProduceTrainer.silenceBuffer;
+    this.updateVocoderStatus('Vocoder: updating parameters',false);
+    this.worldAudioProducer.update(mean,sd);
   }
 
   show() {
@@ -402,4 +453,12 @@ class ProduceTrainer {
     this.div.style.display = 'none';
   }
 
+
+  updateVocoderStatus(text, active) {
+    this.worldReady = active;
+    this.vocoderStatus.innerHTML = text;
+    this.vocoderStatus.style.color = active?'black':'green';
+    this.vocoderButton.style.display = active?'inline-block':'none';
+    this.tryVocoderButton.disabled = !active;
+  }
 }
